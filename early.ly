@@ -1,5 +1,8 @@
 \version "2.24.3"
 
+\include "early_backend/early-interface.ly"
+\include "early_backend/EarlyVoice/NoteHead.ly"
+
 \layout {
 
     \context {
@@ -16,6 +19,8 @@
 
        	% \consists Ligature_bracket_engraver
        	\remove Mensural_ligature_engraver
+        \override NoteHead.style = #'tournai
+        \override NoteHead.stencil = #early:note-head::print
 
     }
 
