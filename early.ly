@@ -40,6 +40,7 @@
         %% Properties
 
         \override Stem.neutral-direction = #UP
+        \override LedgerLineSpanner.stencil = ##f
 
     }
 
