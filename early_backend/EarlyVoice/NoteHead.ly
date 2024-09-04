@@ -1,5 +1,6 @@
 \version "2.24.3"
 
+\include "../early-path-utilities.ly"
 \include "../early-styles.ly"
 
 % Function: ly:make-stencil expr xext yext
@@ -15,82 +16,80 @@
 % make-connected-path-stencil
 % * pointlist thickness x-scale y-scale connect fill
 
+#(define (early:path-notehead-square-side-simple width)
+  (list (list 'l width 0)))
+
 #(define (early:get-notehead-path style type notation properties)
   '())
 
-#(define (rotate-path path-commands angle) ; ChatGPT]
-    "path-commands: list of lists like (('l x1 x2)('c x1 y1 x2 y2 x3 y3))"
+#(define (early:path-notehead-square-side-complex width)
+    (let ((side (list 'c   0 0   0.34 0   width 0))
+        (corner (list 'c   0.5 0   0.1 -0.5  0 0)))
+    (list side corner)))
 
-    (define (rotate-point x y angle) ; ChatGPT
-      (let* ((phi (degrees->radians angle))
-             (cos-phi (cos phi))
-             (sin-phi (sin phi)))
-       (list (+ (* x cos-phi) (* (- y) sin-phi))
-             (+ (* x sin-phi) (* y cos-phi)))))
+#(define (early:path-notehead-square-side complex len corner-offset angle)
+  (let ((side (if complex
+               (early:path-notehead-square-side-complex len)
+               (early:path-notehead-square-side-simple len))))
+    (rotate-path side angle)))
 
-    (define (rotate-points points angle) ; ChatGPT
-      (map (lambda (point)
-            (rotate-point (car point) (cadr point) angle))
-       points))
+#(define (early:notehead-quadrata x-len y-len)
+  (let ((side (make-hash-table))
+        (random-angle (lambda () (zero? (random 2)))))
+   (hashq-set! side 'x-len x-len)
+   (hashq-set! side 'y-len y-len)
+   (hashq-set! side 'lengths (list x-len y-len x-len y-len))
+   (hashq-set! side 'corners (list (random-angle) (random-angle) (random-angle) (random-angle)))
+   (hashq-set! side 'corner-offsets (list 0.1 0.1 0.1 0.1))
+   (hashq-set! side 'angles (list 0 90 180 270))
+   side))
 
-    (define (rotate-line command angle)
-      (let ((i (list-ref command 0))
-            (x (list-ref command 1))
-            (y (list-ref command 2)))
-       (cons (list i) (rotate-point x y angle))))
+#(define (early:get-notehead-path)
+   (let* ((notehead (early:notehead-quadrata 1.5 1))
+          (path-notehead (append-map early:path-notehead-square-side ; len corner corner-offset
+                          (hashq-ref notehead 'corners)
+                          (hashq-ref notehead 'lengths)
+                          (hashq-ref notehead 'corner-offsets)
+                          (hashq-ref notehead 'angles))))
+    path-notehead))
 
-    (define (rotate-curve command angle)
-      (let ((c (list-ref command 0))
-            (x1 (list-ref command 1))
-            (y1 (list-ref command 2))
-            (x2 (list-ref command 3))
-            (y2 (list-ref command 4))
-            (x3 (list-ref command 5))
-            (y3 (list-ref command 6)))
-        (append (list c)
-                (rotate-points (list (list x1 y1)
-                                     (list x2 y2)
-                                     (list x3 y3))
-                               angle))))
+#(define (early:path-notehead-quadrata-random-side width)
+  (early:path-notehead-square-side (zero? (random 2)) width) )
 
-    (map (lambda (command)
-          (if (= (length command) 7)
-           (rotate-curve command angle)
-           (rotate-line command angle)))
-      path-commands))
-
-#(define (early:get-notehead-quadrata-random-side)
-  ;(let ((side
-  ;      (corner
-  '((c 0 0
-       0.35 0
-       0.8 0)
-    (c 0.5 0
-       0.1 -0.5
-       0.1 0.1))) )
-
-#(define (early:get-notehead-quadrata-sides)
-  (let ((side-left (early:get-notehead-quadrata-random-side  ))
-        (side-up (early:get-notehead-quadrata-random-side  ))
-        (side-right (early:get-notehead-quadrata-random-side  ))
-        (side-down (early:get-notehead-quadrata-random-side  )) )
-   (list '(m 0.1 0)
-         side-down
-         (rotate-path side-right 90)
-         (rotate-path side-up 180)
-         (rotate-path side-left 270))))
-
-#(define (early:get-notehead-stencil grob)
+#(define (early:get-notehead-stencil grob) ; main function
   "Return early note head stencil."
   (let* ((duration-log (ly:grob-property grob 'duration-log))
-         ;(stem (ly:grob-property grob 'stem))
-         (style (ly:grob-property grob 'style))
-         (staff-position (ly:grob-property grob 'staff-position)))
-   (let* ((corner-offset 0.1)
+          ;(stem (ly:grob-property grob 'stem))
+          (style (ly:grob-property grob 'style))
+          (staff-position (ly:grob-property grob 'staff-position)))
+      (let* ((corner-offset 0.1)
           (side-length (- 1 (* corner-offset 2))) )
-    (make-path-stencil
-      (flatten-list (early:get-notehead-quadrata-sides))
+      (make-path-stencil
+      (flatten-list (early:get-notehead-path))
       0.05 1 1 #f) )))
+
+% #(define (early:get-notehead-quadrata-sides)
+%   (let ((side-left (early:path-notehead-quadrata-random-side  1))
+%         (side-up (early:path-notehead-quadrata-random-side  2))
+%         (side-right (early:path-notehead-quadrata-random-side  1))
+%         (side-down (early:path-notehead-quadrata-random-side  2)) )
+%    (list '(m 0.1 0)
+%          side-down
+%          (rotate-path side-right 90)
+%          (rotate-path side-up 180)
+%          (rotate-path side-left 270))))
+
+% #(define (early:get-notehead-stencil grob) ; main function
+%   "Return early note head stencil."
+%   (let* ((duration-log (ly:grob-property grob 'duration-log))
+%          ;(stem (ly:grob-property grob 'stem))
+%          (style (ly:grob-property grob 'style))
+%          (staff-position (ly:grob-property grob 'staff-position)))
+%    (let* ((corner-offset 0.1)
+%           (side-length (- 1 (* corner-offset 2))) )
+%     (make-path-stencil
+%       (flatten-list (early:get-notehead-quadrata-sides))
+%       0.05 1 1 #f) )))
 
 #(define-public (early:note-head::print grob)
   "Create early stencil for a notehead."

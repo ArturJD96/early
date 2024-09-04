@@ -3,7 +3,7 @@
 
 #(set-global-staff-size 60)
 
-basic_notes = {a\maxima \longa \breve 1 2 4 8}
+basic_notes = {a\maxima a\longa a\breve a1 a2 a4 a8}
 
 \new PetrucciStaff \relative c' {
 
