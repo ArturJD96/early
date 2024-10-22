@@ -1,7 +1,13 @@
 \version "2.24.3"
 \include "../early.ly"
 
-#(set-global-staff-size 60)
+#(set-global-staff-size 30)
+
+\header {
+
+    title = "Early basic notes"
+
+}
 
 basic_notes = {a\maxima a\longa a\breve a1 a2 a4 a8}
 
