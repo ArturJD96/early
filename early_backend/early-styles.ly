@@ -1,6 +1,6 @@
 \version "2.24.3"
 
-#(define-public (early:guard-symbol style)
+#(define (early:guard-symbol style)
   (when (not (symbol? style))
    (display "argument must be a symbol.")))
 

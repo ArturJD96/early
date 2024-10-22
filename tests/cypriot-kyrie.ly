@@ -10,73 +10,54 @@ space = {}
   (or (number-or-string? arg)
       (pair? arg)))
 
-signum =
-#(define-music-function (mensura-code)
-                        (string-or-numeric?)
-  (let ((ms (if (string? mensura-code)
-             mensura-code
-             (number->string mensura-code)))
-        (tempus '())
-        (prolatio '())
-        (proportio '()))
-   (cond
-    ((number-or-pair? mensura-code)
-     (set! proportio mensura-code))
-    ((string? mensura-code)
-     '()))
-   #{
+triplum = \mensural #early:ars-subtilior \relative {
 
-    \context EarlyVoice
-    \applyContext
-    #(lambda (context)
-      ;(display ms)
-      (ly:context-set-property! context
-                                'earlyMensurationSign
-                                ms))
-
-    \time 1/2
-
-   #}))
-
-triplum = \displayMusic \mensural #early:ars-subtilior \relative {
-
+    \clef "petrucci-c1"
     \mensura "O"
-
-    \clef soprano
 
     % Line 1
 
-    %{\div%} c''\breve b1\div
-    a2 e1 a2 a \space g2
-    \space a2 g f e e d
-    \space f2 g a1 b2 c d c1 b b a
+    c''\breve b1 % backward punctum divisionis
+    a2 e1 a2 a g2
+    a2 g f e e d
+    f2 g a1 b2 c
+    d2 c1 b2 b a
 
-    \mensura 2
-    c1 d2 c b a g1 c b b a
+    \proportio 2
+    c1 d2 c b a
+    g1 c2 b b a
 
     \mensura "O"
-    c2 g1 e a2
+    c2 \[ g1 \flexa e \] g2
 
-    % \break
-
-    \mensura 3
+    \proportio 3
     a1 b2
-    a1 g8 f
-    e1 f8 g
+    a1 g8*2 f
+    e1 f8*2 g
 
-    \mensura "O."
+    \mensura "O"
     a\breve f1
-    e\breve d2 e\div
+    e\breve d2 e2.*2/3
     f2 g g f f e
     g1 r g
     a\breve g1
-    f2 \space a1 c2 b a
-    g2 d'1 c d b
+    f2 a1 c2 b a
+    g2 d'1 c2 b a
 
-    \mensura 2
+    \proportio 2
     c1 d2 c b a
-
     % line 2
+    g2 a b a b g
+
+    \proportio 3
+    a1 b2
+    c1 b8*2 a
+    g1 f8*2 g
+
+    \mensura "O"
+    e1. a2 a g
+    a2 g f e e d8*2 e
+    f\maxima\fermata
 
 }
 

@@ -6,3 +6,5 @@
     '(prop1
       prop2
       prop3))
+
+% start: declare early note-head properties here.
