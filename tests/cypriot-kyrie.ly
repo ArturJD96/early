@@ -10,7 +10,7 @@ space = {}
   (or (number-or-string? arg)
       (pair? arg)))
 
-triplum = \mensural #early:ars-subtilior \relative {
+triplum = \mensural \relative {
 
     \clef "petrucci-c1"
     \mensura "O"

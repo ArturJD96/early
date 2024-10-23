@@ -3,7 +3,7 @@
 \include "../early.ly"
 \include "../mensural.ly"
 
-perfectum-music = \mensural #early:ars-subtilior \relative d'' {
+perfectum-music = \mensural \relative d'' {
     % \modus #'imperfectum
     \voiceOne
     \mensura "O"
@@ -19,7 +19,7 @@ perfectum-music = \mensural #early:ars-subtilior \relative d'' {
     g\maxima \bar "|"
 }
 
-expected-music = \mensural #early:ars-subtilior \relative d' {
+expected-music = \mensural \relative d' {
     \voiceTwo
     \time 3/2
     d\breve. c b a g g\maxima. \bar "|"

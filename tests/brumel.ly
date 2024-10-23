@@ -16,7 +16,7 @@ hollow =
 #(define-music-function (music) (ly:music?)
   music)
 
-tenor = \relative \mensural #(early:mensura-properties) {
+tenor = \relative \mensural {
 
     \clef "petrucci-c4"
 

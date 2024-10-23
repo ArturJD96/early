@@ -1,64 +1,8 @@
 \version "2.24.3"
 
-% #(set-object-property! 'early-music-properties 'music-type? alist?)
+\include "music-definitions.ily"
 
-#(define (define-event! type properties)
-   (set-object-property! type
-                         'music-description
-                         (cdr (assq 'description properties)))
-   (set! properties (assoc-set! properties 'name type))
-   (set! properties (assq-remove! properties 'description))
-   (hashq-set! music-name-to-property-table type properties)
-   (set! music-descriptions
-         (sort (cons (cons type properties)
-                     music-descriptions)
-               alist<?)))
-
-#(define-event-class 'early-event 'music-event)
-#(define-event-class 'early:mensura-event 'early-event)
-#(define-event-class 'early:color-minor-sequence 'early-event)
-
-#(define-event!
-  'early:MensuraEvent
-  '((description . "Used to modify current early:mensura-properties")
-    (types . (early:mensura-event time-signature-event))))
-
-% #(define-event!
-%     'early:ColorMinorStart
-%     '((description . "Signaling start of color event context")
-%     (types . (early:color-minor-start))))
-
-% #(define-event!
-%     'early:ColorMinorEnd
-%     '((description . "Signaling end of color event context")
-%     (types . (early:color-minor-end))))
-
-#(define (early:duration->name dur)
-  (case (ly:duration-log dur)
-   ((-3) 'maxima)
-   ((-2) 'longa)
-   ((-1) 'brevis)
-   ((0) 'semibrevis)
-   ((1) 'minima)
-   ((2) 'semiminima)
-   ((3) 'fusa)
-   ((4) 'semifusa)))
-
-#(define (early:music-property music early-property)
-  (let ((props (ly:music-property music 'early:music-properties)))
-   (if props
-    (assoc-ref props early-property)
-    #f)))
-
-#(define (early:music-set-property! music early-property value)
-  (let ((props (ly:music-property music 'early:music-properties)))
-   (ly:music-set-property! music 'early:music-properties
-    (if props
-     (assoc-set! props early-property value)
-     (list (cons early-property value))))
-   music))
-
-#(define (early:mensura-properties)
+#(define (early:get-default-mensura-properties)
     ;; default public properties
   '((blackmensural . #f)
     (color . white)
@@ -67,9 +11,6 @@
     (proportio . #f)
     (perfection . ()) ; e.g. (-2 . (#t . #f)) – maximodus perfectum (interpreted as triplet)
 ))
-
-% #(alist-deep-copy ;; LIST SHOULD BE COPIED!
-#(define-public early:ars-subtilior (early:mensura-properties))
 
 mensuration =
 #(define-music-function (alist) (alist?)
@@ -208,7 +149,6 @@ mensura =
          (props:is  (lambda (k v) (eq? (props:get k) v)))
 
          (dur-log (ly:duration-log dur))
-         (dur-name (early:duration->name dur))
          (perfection (props:get 'perfection))
          (proportion (props:get 'proportio))
          (default-ternary (props:get 'default-ternary))
@@ -244,8 +184,9 @@ mensura =
   ))
 
 mensural =
-#(define-music-function (mensura-properties music) (alist? ly:music?)
-  (let* ((props:get (lambda (key) (assoc-ref mensura-properties key)))
+#(define-music-function (music) (ly:music?)
+  (let* ((mensura-properties (early:get-default-mensura-properties))
+         (props:get (lambda (key) (assoc-ref mensura-properties key)))
          (props:set! (lambda (k v)
                       (set! mensura-properties
                             (assoc-set! mensura-properties k v))))

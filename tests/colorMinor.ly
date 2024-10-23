@@ -3,7 +3,7 @@
 \include "../early.ly"
 \include "../mensural.ly"
 
-expected-music = \mensural #early:ars-subtilior \relative d'' {
+expected-music = \mensural \relative d'' {
     % \override Stem.direction = #UP
     d1. d2 \bar "|"
     d1. d4 d \bar "|"
@@ -11,7 +11,7 @@ expected-music = \mensural #early:ars-subtilior \relative d'' {
     d\breve d1 d2 d \bar "|"
 }
 
-colorMinor-music = \mensural #early:ars-subtilior \relative d' {
+colorMinor-music = \mensural \relative d' {
     % \override Stem.direction = #DOWN
     \colorMinor { d\breve d1 } \break
     \colorMinor { d\breve d2 d2 } \break
