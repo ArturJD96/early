@@ -61,9 +61,9 @@
 #(define (early:mensura-properties)
     ;; default public properties
   '((blackmensural . #f)
-    ;(color-minor . #f)
     (color . white)
     (hollow . #f)
+    (default-ternary . #f)
     (proportio . #f)
     (perfection . ()) ; e.g. (-2 . (#t . #f)) – maximodus perfectum (interpreted as triplet)
 ))
@@ -111,6 +111,7 @@ prolatio =
 proportio =
 #(define-music-function (proportion) (number-or-pair?) #{
     \mensuration #(list (cons 'proportio proportion))
+    \once \override TimeSignature.style = #'single-digit
 #})
 
 #(define (string-or-numeric? arg)
@@ -125,16 +126,19 @@ mensura =
     \tempus #'perfectum
     \prolatio #'minor
     \proportio 1
+    \time 3/2
    #})
    ((equal? signum "O.") #{
     \tempus #'perfectum
     \prolatio #'maior
     \proportio 1
+    \time 9/4
    #})
    ((equal? signum "C|") #{
     \tempus #'imperfectum
     \prolatio #'minor
     \proportio 2
+    \time 2/2
    #})
    (else #{
     \proportio #signum
@@ -207,6 +211,9 @@ mensura =
          (dur-name (early:duration->name dur))
          (perfection (props:get 'perfection))
          (proportion (props:get 'proportio))
+         (default-ternary (props:get 'default-ternary))
+
+         (punctum-perfectionis (props:get 'punctum-perfectionis))
 
          (compress-factor (if (fraction? proportion)
                            proportion
@@ -218,10 +225,11 @@ mensura =
 
         )
 
+    ;; gather together all compress factors.
     (for-each
      (lambda (setting)
       (let* ((dlog (car setting))
-             (ternary (cadr setting))
+             (ternary (and (cadr setting) default-ternary))
              (triplet (cddr setting))
              (mod (cond
                    ((< dlog dur-log) 1)
@@ -315,15 +323,58 @@ colorMinor =
         #n2
    #}))
 
+perfect =
+#(define-music-function () ()
+  (make-music
+   'early:MensuraEvent
+   'mensura-properties
+   '((default-ternary . #t))))
+
+imperfect =
+#(define-music-function () ()
+    (make-music
+    'early:MensuraEvent
+    'mensura-properties
+    '((default-ternary . #f))))
+
+
+#(define (pair->fraction pair)
+  (/ (car pair) (cdr pair)))
+
+#(define (add-punctum note)
+  (let* ((dur (ly:music-property note 'duration))
+         (dur-log (ly:duration-log dur))
+         (dot-count (ly:duration-dot-count dur))
+         (dur-factor (pair->fraction (ly:duration-factor dur))))
+   (unless (= 0 dot-count)
+    (ly:warning "Note with punctum should not have an explicit dot."))
+   (ly:music-set-property! note 'duration
+    (ly:duration-compress
+     (ly:make-duration dur-log 1 dur-factor)
+     2/3))
+   note
+))
+
+pdiv =
+#(define-music-function (note) (ly:music?)
+  (early:music-set-property! note 'punctum-divisionis #t)
+  (add-punctum note)
+)
+
+pperf =
+#(define-music-function (note) (ly:music?)
+  (early:music-set-property! note 'punctum-perfectionis #t)
+  (add-punctum note)
+)
 
 colorMinor =
-#(define-music-function (music) (ly:music?)
+#(define-music-function (music-sequence) (ly:music?)
   ;; setting color-minor to true already on sequence level
   ;; because the 'mensural' function will take care of it separately.
-  (early:music-set-property! music 'color-minor #t)
+  (early:music-set-property! music-sequence 'color-minor #t)
   #{
     \set EarlyVoice.earlyColor = #'black % TO DO: use the default color used for imperfectum.
-    #music
+    #music-sequence
   #})
 
   % (ly:music-set-property! music 'elements

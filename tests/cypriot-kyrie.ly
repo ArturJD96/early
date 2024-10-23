@@ -17,7 +17,7 @@ triplum = \mensural #early:ars-subtilior \relative {
 
     % Line 1
 
-    c''\breve b1 % backward punctum divisionis
+    c''\breve \pdiv b1 % backward punctum divisionis
     a2 e1 a2 a g2
     a2 g f e e d
     f2 g a1 b2 c
@@ -37,7 +37,7 @@ triplum = \mensural #early:ars-subtilior \relative {
 
     \mensura "O"
     a\breve f1
-    e\breve d2 e2.*2/3
+    e\breve d2 \pdiv e2
     f2 g g f f e
     g1 r g
     a\breve g1

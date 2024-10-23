@@ -137,6 +137,8 @@ testParser = #(define-music-function (m) (ly:music?)
         \override Stem.neutral-direction = #UP
         \override LedgerLineSpanner.stencil = ##f
 
+        \override TimeSignature.style = #'mensural
+
         % early-color-black = color...
 
        	\description "..." % TODO
