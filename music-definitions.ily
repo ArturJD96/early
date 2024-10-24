@@ -12,20 +12,22 @@
                      music-descriptions)
                alist<?)))
 
-#(define-event-class 'early-event 'music-event)
-#(define-event-class 'early:mensura-event 'early-event)
-#(define-event-class 'early:color-minor-sequence 'early-event)
-
-#(define-event!
-  'early:MensuraEvent
-  '((description . "Used to modify current early:mensura-properties")
-    (types . (early:mensura-event time-signature-event))))
+#(unless (ly:make-event-class 'early-event)
+  (define-event-class 'early-event 'music-event)
+  (define-event-class 'early:mensura-event 'early-event)
+  (define-event-class 'early:color-minor-sequence 'early-event)
+  (define-event!
+   'early:MensuraEvent
+   '((description . "Used to modify current early:mensura-properties")
+     (types . (early:mensura-event time-signature-event)))
+  )
+)
 
 #(define (early:music-property music early-property)
-    (let ((props (ly:music-property music 'early:music-properties)))
+  (let ((props (ly:music-property music 'early:music-properties)))
     (if props
-    (assoc-ref props early-property)
-    #f)))
+     (assoc-ref props early-property)
+     #f)))
 
 #(define (early:music-set-property! music early-property value)
     (let ((props (ly:music-property music 'early:music-properties)))
