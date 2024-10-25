@@ -58,6 +58,8 @@
     ("Oo" (3 . 2) #f #t #f 4/3 () ly:time-signature::print-dummy) ;; After humdrum *met (https://wiki.ccarh.org/images/9/9f/Stage2-specs.html)
     ;; Lilypond remaining (see: https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs)
     ("C|." (6 . 8) () #f #t 1/2 () ly:time-signature::print-with-proportio)
-    ("O|." (9 . 8) () #t #t 1/2 () ly:time-signature::print-with-proportio))
+    ("O|." (9 . 8) () #t #t 1/2 () ly:time-signature::print-with-proportio)
     ;; ignored by now: LilyPond's 2/4 (C|r)
+    ;; No time signature
+    ("X" (1 . 1) #f #f #f 1 () ly:time-signature::print-x))
 )

@@ -165,6 +165,7 @@ mensura =
         \time #time-signature-dummy
     #}))
 
+% Main function
 mensural =
 #(define-music-function (music) (ly:music?)
   (let* ((mensura-properties (early:get-default-mensura-properties))
@@ -217,36 +218,9 @@ mensural =
 
 
 flexa = \once \override NoteHead.ligature-flexa = ##t
-
-
-colorMinor =
-#(define-music-function (n1 n2) (ly:music? ly:music?)
-  ;; THIS IS OVERRIDEN BELOW
-  ;; flags: – long-note-encountered
-  ;; - short-note-encountered
-  (let* ((dur1 (ly:music-property n1 'duration))
-         (dur2 (ly:music-property n2 'duration))
-         (log1 (ly:duration-log dur1))
-         (log2 (ly:duration-log dur2))
-         (len1 (duration-length dur1))
-         (len2 (duration-length dur2))
-         (dot1 (ly:duration-dot-count dur1))
-         (dot2 (ly:duration-dot-count dur2))
-         (com1 (ly:duration-scale dur1))
-         (com2 (ly:duration-scale dur2)))
-   (unless (= (/ len1 len2) 2)
-    (error "Wrong durations of notes interpreted as color minor (must be 1/2 ratio).\n"))
-   (ly:music-set-property! n1 'duration
-    (ly:make-duration log1 dot1 (* 3/4 com1)))
-   (ly:music-set-property! n2 'duration
-    (ly:make-duration log2 dot2 (* 1/2 com2)))
-   ;; return
-   #{
-        \once \set earlyColor = #'black
-        #n1
-        \once \set earlyColor = #'black
-        #n2
-   #}))
+% only in v. 2.25
+virga = \once \override NoteHead.right-down-stem = ##t
+virgaUp = \once \override NoteHead.right-up-stem = ##t
 
 
 perfect =
@@ -305,6 +279,16 @@ colorMinor =
     \set EarlyVoice.earlyColor = #'black % TO DO: use the default color used for imperfectum.
     #music-sequence
   #})
+
+
+planus = \mensura "X"
+
+hollow = % better use context?
+#(define-music-function (note) (ly:music?)
+  (early:music-set-property! note 'hollow #t)
+  note)
+
+% maxima = #(ly:make-duration -3 0 1/1)
 
   % (ly:music-set-property! music 'elements
   %  (append

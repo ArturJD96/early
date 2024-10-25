@@ -78,6 +78,8 @@ testParser = #(define-music-function (m) (ly:music?)
 
 \layout {
 
+    ragged-right = ##t
+
     \context { \PetrucciVoice
 
        	\name EarlyVoice
