@@ -1,6 +1,7 @@
 \version "2.24.3"
 
 \include "music-definitions.ily"
+\include "mensuration.ily"
 
 #(define (early:get-default-mensura-properties)
     ;; default public properties
@@ -55,35 +56,16 @@ proportio =
     \once \override TimeSignature.style = #'single-digit
 #})
 
-#(define (string-or-numeric? arg)
-  (or (number-or-string? arg)
-      (pair? arg)))
-
 mensura =
-#(define-music-function (signum) (string-or-numeric?)
-  ;; make it better (use regexp)
-  (cond
-   ((equal? signum "O") #{
-    \tempus #'perfectum
-    \prolatio #'minor
-    \proportio 1
-    \time 3/2
-   #})
-   ((equal? signum "O.") #{
-    \tempus #'perfectum
-    \prolatio #'maior
-    \proportio 1
-    \time 9/4
-   #})
-   ((equal? signum "C|") #{
-    \tempus #'imperfectum
-    \prolatio #'minor
-    \proportio 2
-    \time 2/2
-   #})
-   (else #{
-    \proportio #signum
-   #})))
+#(define-music-function (signum) (number-or-string?)
+  (let* ((mensuration-properties (assoc-ref all-mensurations signum))
+         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
+   (unless mensuration-properties
+    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration."))
+  #{
+        \mensuration #mensuration-properties
+        \time #time-signature-dummy
+    #}))
 
 
 #(define (early:handle-color-minor music mensura-properties)
@@ -183,6 +165,7 @@ mensura =
 
   ))
 
+
 mensural =
 #(define-music-function (music) (ly:music?)
   (let* ((mensura-properties (early:get-default-mensura-properties))
@@ -233,7 +216,9 @@ mensural =
 #(define (early:make-duration len dots den num)
   (ly:make-duration len dots num den))
 
+
 flexa = \once \override NoteHead.ligature-flexa = ##t
+
 
 colorMinor =
 #(define-music-function (n1 n2) (ly:music? ly:music?)
@@ -264,12 +249,14 @@ colorMinor =
         #n2
    #}))
 
+
 perfect =
 #(define-music-function () ()
   (make-music
    'early:MensuraEvent
    'mensura-properties
    '((default-ternary . #t))))
+
 
 imperfect =
 #(define-music-function () ()
@@ -302,11 +289,13 @@ pdiv =
   (add-punctum note)
 )
 
+
 pperf =
 #(define-music-function (note) (ly:music?)
   (early:music-set-property! note 'punctum-perfectionis #t)
   (add-punctum note)
 )
+
 
 colorMinor =
 #(define-music-function (music-sequence) (ly:music?)

@@ -16,8 +16,7 @@
   (define-event-class 'early-event 'music-event)
   (define-event-class 'early:mensura-event 'early-event)
   (define-event-class 'early:color-minor-sequence 'early-event)
-  (define-event!
-   'early:MensuraEvent
+  (define-event! 'early:MensuraEvent
    '((description . "Used to modify current early:mensura-properties")
      (types . (early:mensura-event time-signature-event)))
   )
