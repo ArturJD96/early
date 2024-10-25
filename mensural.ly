@@ -13,60 +13,6 @@
     (perfection . ()) ; e.g. (-2 . (#t . #f)) – maximodus perfectum (interpreted as triplet)
 ))
 
-mensuration =
-#(define-music-function (alist) (alist?)
-  (make-music
-   'early:MensuraEvent
-   'mensura-properties
-   alist))
-
-tempus =
-#(define-music-function (perfection) (boolean-or-symbol?)
-  (let* ((perf (cond
-                ((eq? perfection 'perfectum) #t)
-                ((eq? perfection 'perfect) #t)
-                ((eq? perfection 'imperfectum) #f)
-                ((eq? perfection 'imperfect) #f)
-                ((boolean? perfection) perfection)
-                (else
-                 (ly:error "Incorrect perfection. Can be: perfect, perfectum, imperfect, imperfectum or boolean.")
-                ))))
-   #{
-        \mensuration #(list (cons -1 perf))
-   #}))
-
-prolatio =
-#(define-music-function (prolation) (boolean-or-symbol?)
-  (let* ((symb (symbol? prolation))
-         (prol (cond
-                ((eq? prolation 'maior) #t)
-                ((eq? prolation 'major) #t)
-                ((eq? prolation 'minor) #f)
-                ((boolean? prolation) prolation)
-                (else
-                 (ly:error "Incorrect prolation. Can be: maior, major, minor or boolean.")
-                ))))
-   #{
-        \mensuration #(list (cons 0 prol))
-   #}))
-
-proportio =
-#(define-music-function (proportion) (number-or-pair?) #{
-    \mensuration #(list (cons 'proportio proportion))
-    \once \override TimeSignature.style = #'single-digit
-#})
-
-mensura =
-#(define-music-function (signum) (number-or-string?)
-  (let* ((mensuration-properties (assoc-ref all-mensurations signum))
-         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
-   (unless mensuration-properties
-    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration."))
-  #{
-        \mensuration #mensuration-properties
-        \time #time-signature-dummy
-    #}))
-
 
 #(define (early:handle-color-minor music mensura-properties)
   (let* (;; note moment's main fractions
@@ -165,6 +111,59 @@ mensura =
 
   ))
 
+mensuration =
+#(define-music-function (alist) (alist?)
+(make-music
+    'early:MensuraEvent
+    'mensura-properties
+    alist))
+
+tempus =
+#(define-music-function (perfection) (boolean-or-symbol?)
+(let* ((perf (cond
+                ((eq? perfection 'perfectum) #t)
+                ((eq? perfection 'perfect) #t)
+                ((eq? perfection 'imperfectum) #f)
+                ((eq? perfection 'imperfect) #f)
+                ((boolean? perfection) perfection)
+                (else
+                 (ly:error "Incorrect perfection. Can be: perfect, perfectum, imperfect, imperfectum or boolean.")
+                ))))
+    #{
+        \mensuration #(list (cons -1 perf))
+    #}))
+
+prolatio =
+#(define-music-function (prolation) (boolean-or-symbol?)
+(let* ((symb (symbol? prolation))
+        (prol (cond
+                ((eq? prolation 'maior) #t)
+                ((eq? prolation 'major) #t)
+                ((eq? prolation 'minor) #f)
+                ((boolean? prolation) prolation)
+                (else
+                 (ly:error "Incorrect prolation. Can be: maior, major, minor or boolean.")
+                ))))
+    #{
+        \mensuration #(list (cons 0 prol))
+    #}))
+
+proportio =
+#(define-music-function (proportion) (number-or-pair?) #{
+    \mensuration #(list (cons 'proportio proportion))
+    \once \override TimeSignature.style = #'single-digit
+#})
+
+mensura =
+#(define-music-function (signum) (number-or-string?)
+  (let* ((mensuration-properties (assoc-ref all-mensurations signum))
+         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
+    (unless mensuration-properties
+    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration."))
+    #{
+        \mensuration #mensuration-properties
+        \time #time-signature-dummy
+    #}))
 
 mensural =
 #(define-music-function (music) (ly:music?)
