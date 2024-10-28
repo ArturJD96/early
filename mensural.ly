@@ -168,6 +168,8 @@ mensura =
 % Main function
 mensural =
 #(define-music-function (music) (ly:music?)
+    ;; BUG: Parsing...ice-9/eval.scm:159:9: In procedure /: Wrong type argument in position 2: #f
+    ;;      This occurs when defining: voice = \relative \mensural { a } TWICE !!!
   (let* ((mensura-properties (early:get-default-mensura-properties))
          (props:get (lambda (key) (assoc-ref mensura-properties key)))
          (props:set! (lambda (k v)
