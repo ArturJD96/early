@@ -8,10 +8,6 @@
 m = \melisma
 mE = \melismaEnd
 
-planus =
-#(define-music-function (music) (ly:music?)
-  music)
-
 hollow =
 #(define-music-function (music) (ly:music?)
   music)
@@ -26,9 +22,9 @@ tenor = \relative \mensural {
         f\m f\mE
     }
 
-    \bar "|"
+    \mensura "C|"
 
-    \time 2/2
+    \bar "|"
     r\longa r
     % eternam
     r\breve \[ f\breve\m g a\mE \]
@@ -95,7 +91,7 @@ tenor = \relative \mensural {
 
     \bar "|"
 
-    \time 2/2
+    \mensura "C|"
     % te decet
     a\breve
     \[ b\m a\mE \]

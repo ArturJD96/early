@@ -10,7 +10,7 @@
     (hollow . #f)
     (default-ternary . #f)
     (proportio . #f)
-    (perfection . ()) ; e.g. (-2 . (#t . #f)) – maximodus perfectum (interpreted as triplet)
+    (perfection . ()) ; e.g. (-3 . (#t . #t)) – maximodus perfectum (interpreted as triplet)
 ))
 
 
@@ -111,12 +111,30 @@
 
   ))
 
-mensuration =
-#(define-music-function (alist) (alist?)
-(make-music
+% tactus =
+% #(define-music-function (beat-structure fraction)
+%                         ((number-list? '()) fraction?)
+%   (make-music 'TimeSignatureMusic
+%               'numerator (car fraction)
+%               'denominator (cdr fraction)
+%               'beat-structure beat-structure))
+
+#(define (mensuration alist)
+  (make-music
     'early:MensuraEvent
     'mensura-properties
     alist))
+
+mensura =
+#(define-music-function (signum) (number-or-string?)
+  (let* ((mensuration-properties (assoc-ref all-mensurations signum))
+         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
+    (unless mensuration-properties
+    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration procedure."))
+    #{
+        #(mensuration mensuration-properties)
+        \time #time-signature-dummy
+    #}))
 
 tempus =
 #(define-music-function (perfection) (boolean-or-symbol?)
@@ -130,7 +148,7 @@ tempus =
                  (ly:error "Incorrect perfection. Can be: perfect, perfectum, imperfect, imperfectum or boolean.")
                 ))))
     #{
-        \mensuration #(list (cons -1 perf))
+        #(mensuration (list (cons -1 perf)))
     #}))
 
 prolatio =
@@ -145,25 +163,17 @@ prolatio =
                  (ly:error "Incorrect prolation. Can be: maior, major, minor or boolean.")
                 ))))
     #{
-        \mensuration #(list (cons 0 prol))
+        #(mensuration (list (cons 0 prol)))
     #}))
 
 proportio =
 #(define-music-function (proportion) (number-or-pair?) #{
-    \mensuration #(list (cons 'proportio proportion))
+    % THIS IS NOW BROKEN
+    % 'proportio' doesn't get registered in the mensura property of the context.
+    #(mensuration (list (cons 'proportio proportion)))
     \once \override TimeSignature.style = #'single-digit
 #})
 
-mensura =
-#(define-music-function (signum) (number-or-string?)
-  (let* ((mensuration-properties (assoc-ref all-mensurations signum))
-         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
-    (unless mensuration-properties
-    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration."))
-    #{
-        \mensuration #mensuration-properties
-        \time #time-signature-dummy
-    #}))
 
 % Main function
 mensural =

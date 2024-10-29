@@ -40,7 +40,7 @@
 #(for-each
   (lambda (args) (apply add-mensuration args))
   '(;; https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs
-    ("O" (3 . 2) () #t #f 1 () ly:time-signature::print)
+    ("O"  (3 . 2) () #t #f 1 () ly:time-signature::print)
     ("O:" (3 . 2) () #t #f 1 () ly:time-signature::print-dummy) ;; After humdrum *met (https://wiki.ccarh.org/images/9/9f/Stage2-specs.html)
     ("O." (9 . 4) () #t #t 1 () ly:time-signature::print) ;; After humdrum *met (https://wiki.ccarh.org/images/9/9f/Stage2-specs.html)
     ("O:." (9 . 4) () #t #t 1 () ly:time-signature::print-dummy)

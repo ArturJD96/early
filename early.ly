@@ -3,7 +3,20 @@
 \include "early_backend/early-interface.ly"
 \include "early_backend/EarlyVoice/NoteHead.ly"
 
+% engravers
+\include "engravers/Mensura_engraver.ly"
+\include "engravers/Tactus_engraver.ly"
+\include "engravers/Rest_position_engraver.ly"
+
 % Context properties
+#(set-object-property! 'mensura 'translation-type? alist?)
+#(set-object-property! 'mensuraCompletion 'translation-type? alist?)
+
+#(set-object-property! 'tactusLength 'translation-type? ly:moment?)
+#(set-object-property! 'tactusPosition 'translation-type? ly:moment?)
+#(set-object-property! 'tactusStartNow 'translation-type? boolean?)
+
+% Check those again if they are still needed:
 #(set-object-property! 'earlyBlackmensural 'translation-type? boolean?)
 #(set-object-property! 'earlyColor 'translation-type? symbol?)
 #(set-object-property! 'earlyHollow 'translation-type? boolean?)
@@ -43,36 +56,8 @@
 #(set-object-property! 'early:altered-flag 'backend-type? boolean?)
 #(set-object-property! 'early:punctum-divisionis 'backend-type? boolean?)
 
-#(define (duration->name dur)
-  (case (ly:duration-log dur)
-   ((-3) 'maxima)
-   ((-2) 'longa)
-   ((-1) 'brevis)
-   ((0) 'semibrevis)
-   ((1) 'minima)
-   ((2) 'semiminima)
-   ((3) 'fusa)
-   ((4) 'semifusa)))
-
-% #(define (
-
-testParser = #(define-music-function (m) (ly:music?)
- (music-map (lambda (m) m) m))
-
-% early custom engraver
-#(define Early_mensura_engraver
-  (make-engraver
-   (listeners
-    ((rhythmic-event engraver event)
-     ;(ly:event-set-property! event 'duration (ly:make-duration 1 0 0))
-     ;(ly:event-set-property! event 'length (ly:make-moment 1/2))
-     ;(display (ly:context-current-moment (ly:translator-context engraver)))
-     (display ""))
-   )
-))
 
 #(define (early:note-head::print grob)
-
   (ly:note-head::print grob))
 
 
@@ -85,12 +70,21 @@ testParser = #(define-music-function (m) (ly:music?)
        	\name EarlyVoice
        	\alias PetrucciVoice
 
-        % \consists #testParser
-        \consists #Early_mensura_engraver
-        \remove Mensural_ligature_engraver
+        \consists #early:Mensura_engraver
+        \consists #early:Tactus_engraver
+        \consists #early:Rest_position_engraver
+        % \remove Mensural_ligature_engraver
        	% \consists Ligature_bracket_engraver
         % \override NoteHead.style = #'tournai
         \override NoteHead.stencil = #early:note-head::print
+
+        mensura = #'()
+        mensuraCompletion = #'()
+        % I need this to check if the note has completed current mensura or not.
+
+        tactusLength = #(ly:make-moment 0 0)
+        tactusPosition = #(ly:make-moment 0 0)
+        tactusStartNow = ##t
 
         earlyBlackmensural = ##t
         earlyColor = #'white
