@@ -1,7 +1,7 @@
 \version "2.24.3"
 \include "../early.ly"
 
-#(set-global-staff-size 30)
+#(set-global-staff-size 20)
 
 \header {
 
@@ -9,7 +9,15 @@
 
 }
 
-basic_notes = {a\maxima a\longa a\breve a1 a2 a4 a8}
+basic_notes = {g'\maxima a g\longa a g\breve a g1 a g2 a g4 a g8 a g16 a16}
+
+\layout {
+
+    \context { \Score
+        \override SpacingSpanner.packed-spacing = ##t
+    }
+
+}
 
 \new PetrucciStaff \relative c' {
 
@@ -20,17 +28,33 @@ basic_notes = {a\maxima a\longa a\breve a1 a2 a4 a8}
 
 }
 
-\new EarlyStaff \relative c' {
+\new EarlyStaff \relative{
 
-    % \clef tenor
-
-    \mark "Early: Basic Notes"
-    s1^\markup \fontsize #-5 { white mensural notation }
+    \mark "white mensural notation (Petrucci)"
+    \whitemensural
     \basic_notes
 
-    \bar "|"
+}
 
-    s1^\markup \fontsize #-5 { black mensural notation }
+\new EarlyStaff \relative{
+
+    \mark "black mensural notation (Petrucci)"
+    \blackmensural
+    \basic_notes
+
+}
+
+\new EarlyStaff \relative{
+
+    \mark "white hollow mensural notation (Petrucci)"
+    \whitehollow
+    \basic_notes
+
+}
+
+\new EarlyStaff \relative{
+
+    \mark "blackmensural early noteheads"
     \basic_notes
 
 }

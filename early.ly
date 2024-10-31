@@ -17,45 +17,18 @@
 #(set-object-property! 'tactusStartNow 'translation-type? boolean?)
 
 % Check those again if they are still needed:
-#(set-object-property! 'earlyBlackmensural 'translation-type? boolean?)
-#(set-object-property! 'earlyColor 'translation-type? symbol?)
-#(set-object-property! 'earlyHollow 'translation-type? boolean?)
-#(set-object-property! 'earlyProportio 'translation-type? number-or-pair?)
-#(set-object-property! 'earlyProlatio 'translation-type? symbol?)
-#(set-object-property! 'earlyTempus 'translation-type? symbol?)
-#(set-object-property! 'earlyModus 'translation-type? symbol?)
-#(set-object-property! 'earlyMaximodus 'translation-type? symbol?)
+#(set-object-property! 'notation 'translation-type? symbol?)
+#(set-object-property! 'coloration 'translation-type? symbol?)
+#(set-object-property! 'coloration-secondary 'translation-type? symbol?)
+#(set-object-property! 'hollow 'translation-type? boolean?)
 
-#(set-object-property! 'earlyPerfection 'translation-type? alist?)
-#(set-object-property! 'earlyPerfection 'translation-doc?
-  "Alist of all possible durations and their default state if perfection is implied (perfect or imperfect)")
-
-#(set-object-property! 'earlyPerfectAsTriplets 'translation-type? alist?)
-#(set-object-property! 'earlyPerfectAsTriplets 'translation-doc?
-"If notename is set to true, interpret the perfect division as triple. This is useful to reduce the effect of of duration accumulation from quicker notes (e.g. semifusae).")
-
+% ...!!! Those: implement in \mensural
 #(set-object-property! 'earlyMensuraOff 'translation-type? boolean?)
 #(set-object-property! 'earlyMensuraOff 'translation-doc?
 "Turn off automatic duration mensural recalculation (make it default LilyPond WYSIWYG againg).")
 
-#(define (string-or-numeric? arg)
-  (or (number-or-string? arg)
-      (pair? arg)))
-
-#(set-object-property! 'earlyMensurationSign 'translation-type? string-or-numeric?)
-
 % Grob properties
-#(set-object-property! 'early:blackmensural 'backend-type? boolean?)
-#(set-object-property! 'early:color 'backend-type? symbol?)
-#(set-object-property! 'early:hollow 'backend-type? boolean?)
-#(set-object-property! 'early:proportio 'backend-type? number-or-pair?)
-#(set-object-property! 'early:prolatio 'backend-type? symbol?)
-#(set-object-property! 'early:tempus 'backend-type? symbol?)
-
-#(set-object-property! 'early:perfect-flag 'backend-type? boolean?)
-#(set-object-property! 'early:altered-flag 'backend-type? boolean?)
-#(set-object-property! 'early:punctum-divisionis 'backend-type? boolean?)
-
+% ...
 
 #(define (early:note-head::print grob)
   (ly:note-head::print grob))
@@ -86,34 +59,10 @@
         tactusPosition = #(ly:make-moment 0 0)
         tactusStartNow = ##t
 
-        earlyBlackmensural = ##t
-        earlyColor = #'white
-        earlyHollow = ##f
-        % earlyMaximodus = #'imperfectum
-        % earlyModus = #'imperfectum
-        % earlyTempus = #'imperfectum
-        % earlyProlatio = #'maior
-        % earlyProportio = ##f
-
-        % earlyPerfection =
-        % #'((maxima . #f)
-        %    (longa . #f)
-        %    (brevis . #f)
-        %    (semibrevis . #f)
-        %    (minima . #f)
-        %    (semiminima . #f)
-        %    (fusa . #f)
-        %    (semifusa . #f))
-
-        % earlyPerfectAsTriplets =
-        % #'((maxima . #f)
-        %     (longa . #f)
-        %     (brevis . #f) ; tempus division
-        %     (semibrevis . #f) ; prolatio division
-        %     (minima . #f) ; below prolatio
-        %     (semiminima . #f)
-        %     (fusa . #t)
-        %     (semifusa . #t))
+        notation = #'blackmensural
+        coloration = #'black
+        coloration-secondary = #'blue % for some obscure English manuscripts
+        % hollow = ##f
 
         % \override NoteHead.stencil = #(lambda (grob) (display "DWA\n") ly:note-head::print)
 
@@ -143,4 +92,25 @@
     \inherit-acceptability EarlyStaff PetrucciStaff
     \inherit-acceptability EarlyVoice PetrucciVoice
 
+}
+
+
+% Helpful commands
+
+whitemensural = {
+    \set notation = #'whitemensural
+    \set coloration = #'black
+    \set coloration-secondary = #'gray % for some obscure English manuscripts
+}
+
+blackmensural = {
+    \set notation = #'blackmensural
+    \set coloration = #'red
+    \set coloration-secondary = #'blue % for some obscure English manuscripts
+}
+
+whitehollow = {
+    \set notation = #'white
+    \set coloration = #'black
+    \set coloration-secondary = #'red % for some obscure English manuscripts
 }
