@@ -23,23 +23,57 @@
       (ly:context-set-property! context 'mensura
        (ly:event-property event 'early:mensura-properties))
 
-      (let* ((dur (ly:event-property event 'duration))
+      (let* ((mom (ly:moment-main (ly:event-property event 'length)))
+             (dur (ly:event-property event 'duration))
              (dur-log (ly:duration-log dur))
-             (mom (ly:moment-main (ly:event-property event 'length)))
+             (completion (ly:context-property context 'mensuraCompletion))
+
              (mensural-properties (ly:event-property event 'early:mensura-properties))
+             ;(ternary (assoc-ref
+
+             ;; this note properties
              (proportion (assoc-ref mensural-properties 'proportio))
              (perfection (assoc-ref mensural-properties 'perfection))
-             (completion (ly:context-property context 'mensuraCompletion))
+             (alteration (assoc-ref mensural-properties 'altera))
+
+             ;; decide if note is perfect
+             (perfection-implicit (assoc-ref perfection dur-log))
+             (perfect (if (pair? perfection-implicit) (cdr perfection-implicit) perfection-implicit))
+             ;(pperf (assoc-ref mensural-properties 'punctum-perfectionis))
+
+             (next-duration (assoc-ref perfection (1+ dur-log)))
+             (expecting-perfect (if (pair? next-duration) (cdr next-duration) #f))
             )
 
        (when (null? completion)
-        (set! completion (empty-completion))
-        (ly:context-set-property! context 'mensuraCompletion completion))
+        (set! completion (empty-completion)))
 
+        ;(cond
+               ; ((perfectum)
+               ;  (
+               ; ((altered
+
+       (if perfect
+
+        (ly:error "Perfect is not implemented yet")
+
+        (assoc-set! completion dur-log
+         (+ (assoc-ref completion dur-log)
+           (if expecting-perfect
+               (if alteration 1/3 2/3)
+               1/2)
+         )
+        ))
+
+       (ly:context-set-property! context 'mensuraCompletion completion)
+
+
+
+
+       ;(newline)
+       ;(display completion)
        (set! total-mom (+ total-mom mom))
 
-       (newline)
-       (display completion)
       )
       ;; now, check if the current level of mensura is completed.
      )
