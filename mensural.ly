@@ -6,10 +6,11 @@
 #(define (early:get-default-mensura-properties)
     ;; default public properties
   '((blackmensural . #f)
-    (color . white)
+    (color . #f)
+    (color-minor . #f)
     (hollow . #f)
     (default-ternary . #f)
-    (proportio . #f)
+    (proportio . 1)
     (perfection . ()) ; e.g. (-3 . (#t . #t)) – maximodus perfectum (interpreted as triplet)
 ))
 
@@ -46,12 +47,12 @@
                 ((1/4) 7/8) ; eg longa semibrevis
                 (else (ly:error "Unsupported durations of notes"))))
          (set! remaining-dur-correction (- 1 first-note-dur-correction))
-         ;; check if we can we do color minor anyway.
+         ;; check if we can we do color-minor anyway.
          (set! perfection-setting
                (assoc-ref (assoc-ref mensura-properties 'perfection)
                           (ly:duration-log (ly:music-property m 'duration))))
          (when (and perfection-setting (car perfection-setting))
-          (ly:error "Cannot do color minor when division is perfect"))
+          (ly:error "Cannot do color-minor when division is perfect"))
          (early:music-set-property! m 'color-minor
           first-note-dur-correction)
         )
@@ -62,7 +63,7 @@
              (/ first-note note)))
         )
        )
-       ;; for all the notes in color minor:
+       ;; for all the notes in color-minor:
        (ly:music-set-property! m 'duration
         (ly:duration-compress (ly:music-property m 'duration)
                               (early:music-property m 'color-minor)))
@@ -178,8 +179,6 @@ proportio =
 % Main function
 mensural =
 #(define-music-function (music) (ly:music?)
-    ;; BUG: Parsing...ice-9/eval.scm:159:9: In procedure /: Wrong type argument in position 2: #f
-    ;;      This occurs when defining: voice = \relative \mensural { a } TWICE !!!
   (let* ((mensura-properties (early:get-default-mensura-properties))
          (props:get (lambda (key) (assoc-ref mensura-properties key)))
          (props:set! (lambda (k v)
@@ -215,7 +214,7 @@ mensural =
       ((music-is-of-type? m 'rhythmic-event)
        (ly:music-set-property! m 'early:mensura-properties (alist-copy mensura-properties))
        (ly:music-set-property! m 'duration
-       (early:duration-mensurate (ly:music-property m 'duration) mensura-properties))
+        (early:duration-mensurate (ly:music-property m 'duration) mensura-properties))
        m)
 
      (else m)))
