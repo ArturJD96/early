@@ -48,7 +48,7 @@
         \consists #early:Rest_position_engraver
         % \remove Mensural_ligature_engraver
        	% \consists Ligature_bracket_engraver
-        % \override NoteHead.style = #'tournai
+        \override NoteHead.style = #'tournai
         \override NoteHead.stencil = #early:note-head::print
 
         mensura = #'()
