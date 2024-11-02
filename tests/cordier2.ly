@@ -18,10 +18,10 @@ coloratio =
 accidens =
 #(define-music-function (m) (ly:music?) m)
 
-superius = \relative e' {
+superius = \mensural \relative e' {
 
+    \blackmensural
 	\clef "mensural-c2"
-
     \mensura "O"
 
 	\pausa #2 r\longa

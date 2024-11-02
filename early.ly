@@ -3,6 +3,9 @@
 % \include "early_backend/early-interface.ly"
 % \include "early_backend/EarlyVoice/NoteHead.ly"
 
+% stencils
+\include "stencils/noteheads.ly"
+
 % tools
 \include "macra/early-staff.ly"
 
@@ -36,10 +39,6 @@
 #(set-object-property! 'early:color 'backend-type? symbol?)
 #(set-object-property! 'early:hollow 'backend-type? boolean?)
 
-#(define (early:note-head::print grob)
-  ;(let ((context (ly:grob-property grob 'context)))
-   ;(display context))
-  (ly:note-head::print grob))
 
 
 \layout {
@@ -78,8 +77,6 @@
         colorationSecondary = #'blue % for some obscure English manuscripts
         % hollow = ##f
 
-        % \override NoteHead.stencil = #(lambda (grob) (display "DWA\n") ly:note-head::print)
-
        	\description "..." % TODO
 
     }
@@ -92,9 +89,9 @@
        	\defaultchild EarlyVoice
        	\accepts EarlyVoice
 
-        \remove Custos_engraver
+        % \remove Custos_engraver
 
-        \override StaffSymbol.stencil = #(early-staff jagged-line)
+        % \override StaffSymbol.stencil = #(early-staff jagged-line)
 
         \override Stem.neutral-direction = #UP
         % \override LedgerLineSpanner.stencil = ##f

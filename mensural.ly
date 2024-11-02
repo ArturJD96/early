@@ -79,14 +79,14 @@
 
          (dur-log (ly:duration-log dur))
          (perfection (props:get 'perfection))
-         (proportion (props:get 'proportio))
+         (proportio (props:get 'proportio))
+         (proportion (if (fraction? proportio) proportio (/ 1 proportio)))
          (default-ternary (props:get 'default-ternary))
 
          (punctum-perfectionis (props:get 'punctum-perfectionis))
 
-         (compress-factor (if (fraction? proportion)
-                           proportion
-                           (/ 1 proportion)))
+
+         (compress-factor proportion)
 
          ;(color-allows-perfection ; for checking
          ; (props:is 'color
@@ -168,10 +168,14 @@ prolatio =
     #}))
 
 proportio =
-#(define-music-function (proportion) (number-or-pair?) #{
+#(define-music-function (proportio) (number-or-pair?) #{
     % THIS IS NOW BROKEN
     % 'proportio' doesn't get registered in the mensura property of the context.
-    #(mensuration (list (cons 'proportio proportion)))
+    #(mensuration
+      (list (cons 'proportio
+                  (if (pair? proportio)
+                   (/ (car proportio) (cdr proportio))
+                   proportio))))
     \once \override TimeSignature.style = #'single-digit
 #})
 

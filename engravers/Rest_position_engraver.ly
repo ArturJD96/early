@@ -25,8 +25,8 @@
       (set! last-note-position (ly:grob-staff-position grob))
      )
      ((rest-interface engraver grob source)
-      (newline)
-      (display (ly:context-property context 'mensuraCompletion))
+      ;(newline)
+      ;(display (ly:context-property context 'mensuraCompletion))
       (if (pitched-rest? grob)
 
        '() ;; idk...think about it.

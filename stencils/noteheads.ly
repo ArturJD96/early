@@ -50,9 +50,15 @@
 ))
 
 #(define-public (early:note-head::print grob)
-  (let* ((dur-log (ly:grob-property grob 'duration-log)))
+  (let* ((style (ly:grob-property grob 'style))
+         (dur-log (ly:grob-property grob 'duration-log)))
+
+   ;; print default style if the chosen one is not defined.
+   ;(
+
+
    (if (and (> dur-log -3) (< dur-log 0))
-    (begin
-     (early:quadrata::note-head))
+    ;(early:quadrata::note-head)
+    (ly:note-head::print grob)
     (ly:note-head::print grob))
 ))

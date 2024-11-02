@@ -48,11 +48,6 @@
        (when (null? completion)
         (set! completion (empty-completion)))
 
-        ;(cond
-               ; ((perfectum)
-               ;  (
-               ; ((altered
-
        (if perfect
 
         (ly:error "Perfect is not implemented yet")
@@ -67,11 +62,6 @@
 
        (ly:context-set-property! context 'mensuraCompletion completion)
 
-
-
-
-       ;(newline)
-       ;(display completion)
        (set! total-mom (+ total-mom mom))
 
       )
