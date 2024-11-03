@@ -5,7 +5,7 @@
    (display "argument must be a symbol.")))
 
 #(define-public early:styles-list
-  '(tournai))
+  '(tournai . blackmensural))
 
 #(define-public (early:has-style style)
   (early:guard-symbol style)
@@ -13,7 +13,7 @@
         (eq? style-name style))
    early:styles-list))
 
-#(define-public (early:add-style style)
+#(define-public (early:add-style style default)
   (early:guard-symbol style)
   (set! early:styles-list
    (append early:styles-list (list style))))

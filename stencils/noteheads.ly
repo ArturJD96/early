@@ -56,7 +56,6 @@
    ;; print default style if the chosen one is not defined.
    ;(
 
-
    (if (and (> dur-log -3) (< dur-log 0))
     ;(early:quadrata::note-head)
     (ly:note-head::print grob)

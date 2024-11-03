@@ -1,7 +1,8 @@
 \version "2.24.3"
 
-\include "music-definitions.ily"
-\include "mensuration.ily"
+\include "definitions/music-properties.ily"
+\include "definitions/events.ily"
+\include "definitions/mensurations.ily"
 
 #(define (early:get-default-mensura-properties)
     ;; default public properties
