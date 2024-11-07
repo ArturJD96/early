@@ -49,15 +49,23 @@
    )
 ))
 
+
 #(define-public (early:note-head::print grob)
   (let* ((style (ly:grob-property grob 'style))
-         (dur-log (ly:grob-property grob 'duration-log)))
+         (settings (assoc-ref early:all-styles style))
+         (dur-log (ly:grob-property grob 'duration-log))
+         (notehead (cond ((> dur-log 0) 'rhombus)
+                         ((< dur-log -2) 'maxima)
+                         (else 'quadrata)))
+         (hollow (ly:grob-property grob 'hollow))
+         (warn-if-default (assoc-ref settings 'warn-if-default))
+         ; TO DO: choose hollow variant (otherwise choose from default)?
+         (make-stencil (assoc-ref settings notehead)))
+
+   (if warn-if-default
+    ; TO DO: better warning message including style name and notehead symbol + variant).
+    (ly:warning "Current style does not support the notehead."))
 
    ;; print default style if the chosen one is not defined.
-   ;(
-
-   (if (and (> dur-log -3) (< dur-log 0))
-    ;(early:quadrata::note-head)
-    (ly:note-head::print grob)
-    (ly:note-head::print grob))
+   ((if make-stencil make-stencil ly:note-head::print) grob)
 ))

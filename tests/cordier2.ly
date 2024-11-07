@@ -20,7 +20,7 @@ accidens =
 
 superius = \mensural \relative e' {
 
-    \blackmensural
+    \blackmensural-chantilly
 	\clef "mensural-c2"
     \mensura "O"
 

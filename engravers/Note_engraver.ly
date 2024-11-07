@@ -1,5 +1,12 @@
 \version "2.24.3"
 
+%{
+    This should be rewritten in such a way,
+    that there is an "hollow" or "notehead-filling" (hollow/full/semi etc) property
+    meaning when a smaller note becomes marked by filling it:
+    e.g. in "modern" notation notes below half notes are black.
+%}
+
 #(define-public (early:Note_engraver context)
   (make-engraver
 
