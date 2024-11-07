@@ -13,5 +13,5 @@
 #(assert-equals "early-style is missing" (early:has-style 'non-existent-style-dummy) #f)
 
 #(assert-equals "new early-style added" (early:has-style 'dummy) #f)
-#(early:add-style 'dummy)
+#(early:add-notation-style 'dummy)
 #(assert-equals "new early-style added" (early:has-style 'dummy) #t)
