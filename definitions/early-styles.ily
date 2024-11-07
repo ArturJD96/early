@@ -15,7 +15,7 @@
         (eq? style-name style))
    early:all-styles))
 
-#(define-public (early:add-style style settings)
+#(define-public (early:add-notation-style style settings)
   (early:guard style symbol?)
   (early:guard settings alist?)
   (when (assoc-ref early:all-styles 'style)
@@ -25,7 +25,7 @@
   (set! early:all-styles
    (append early:all-styles (list style))))
 
-#(for-each (lambda (style) (early:add-style (car style) (cdr style)))
+#(for-each (lambda (style) (early:add-notation-style (car style) (cdr style)))
   '((tournai . ((default . blackmensural)
                 (quadrata . ,early:quadrata::note-head )))
 ))

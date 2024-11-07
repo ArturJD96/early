@@ -10,6 +10,7 @@
 
 % Check those again if they are still needed:
 #(set-object-property! 'notation 'translation-type? symbol?)
+#(set-object-property! 'early-style 'translation-type? symbol?)
 #(set-object-property! 'coloration 'translation-type? symbol?)
 #(set-object-property! 'colorationSecondary 'translation-type? symbol?)
 % #(set-object-property! 'hollow 'translation-type? boolean?)

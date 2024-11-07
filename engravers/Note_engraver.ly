@@ -40,6 +40,7 @@
     ((note-head-interface engraver grob source)
      (let* (;; context related
             (notation (ly:context-property context 'notation))
+            (early-style (ly:context-property context 'early-style))
             (coloration (ly:context-property context 'coloration))
             (coloration-secondary (ly:context-property context 'colorSecondary))
             ;; grob related
@@ -63,6 +64,7 @@
        (ly:error "EarlyVoice without \\mensural.\n(Note: This crashing error will be removed soon with intention to make \\early contexts independent of \\mensural calculations)."))
 
       (ly:grob-set-property! grob 'early:notation-type notation)
+      (ly:grob-set-property! grob 'early:style early-style)
       (ly:grob-set-property! grob 'early:hollow hollow)
       (ly:grob-set-property! grob 'early:color
        (cond ((or color color-minor) coloration)
