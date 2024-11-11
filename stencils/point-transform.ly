@@ -42,3 +42,67 @@
            t-point))
          (translate-point (rotate-point point-or-bl angle) t-point)))
        points))
+
+% #(define-public (flip-x points)
+%   (map (lambda (point-firsty point-lasty)
+%         (newline)
+%         (display point-firsty)
+%         (display point-lasty)
+%         (display (cadr point-firsty))
+
+%         (list (- (car point-lasty))
+%               (cadr point-firsty)))
+%    points
+%    (reverse points))
+% )
+
+% #(define-public (flip-y points)
+%   (map (lambda (point-firsty point-lasty)
+%         (list (car point-firsty)
+%               (cadr point-lasty)))
+%    points
+%    (reverse points))
+% )
+
+#(define (get-1d-size 1d-coords)
+  (- (apply max 1d-coords)
+     (apply min 1d-coords)))
+
+#(define-public (flip-x points)
+
+  (let* (
+   (n (+ (length points) 1))
+   (xs (cons 0 (map car points)))
+   (width (get-1d-size xs))
+   (xs-flipped (map - xs (make-list n width)))
+   (y-last (cadr (last points)))
+   (ys (cons 0 (map cadr points)))
+   (ys-pulled (map - ys (make-list n y-last)))
+  )
+
+  (cdr (reverse (map list xs-flipped ys-pulled)))
+
+))
+
+#(define-public (flip-y points)
+
+  (let* (
+   (n (+ (length points) 1))
+   (ys (cons 0 (map cadr points)))
+   (height (get-1d-size ys))
+   (ys-flipped (map - ys (make-list n height)))
+   (x-last (car (last points)))
+   (xs (cons 0 (map car points)))
+   (xs-pulled (map - xs (make-list n x-last)))
+  )
+
+  (cdr (reverse (map list xs-pulled ys-flipped)))
+
+))
+
+
+
+
+
+
+% #(define-public (early:translate-path path point)

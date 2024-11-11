@@ -63,10 +63,10 @@
       (unless mensura-properties
        (ly:error "EarlyVoice without \\mensural.\n(Note: This crashing error will be removed soon with intention to make \\early contexts independent of \\mensural calculations)."))
 
-      (ly:grob-set-property! grob 'early:notation-type notation)
-      (ly:grob-set-property! grob 'early:style early-style)
-      (ly:grob-set-property! grob 'early:hollow hollow)
-      (ly:grob-set-property! grob 'early:color
+      (ly:grob-set-property! grob 'early-notation-type notation)
+      (ly:grob-set-property! grob 'early-style early-style)
+      (ly:grob-set-property! grob 'early-hollow hollow)
+      (ly:grob-set-property! grob 'early-color
        (cond ((or color color-minor) coloration)
               (color-secondary coloration-secondary)))
 
