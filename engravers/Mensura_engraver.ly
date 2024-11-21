@@ -18,8 +18,11 @@
 #(define-public (early:Mensura_engraver context)
   (let ((total-mom 0)) ;; reset each completion of maxima?
    (make-engraver
+
     (listeners
+
      ((rhythmic-event engraver event)
+
       (ly:context-set-property! context 'mensura
        (ly:event-property event 'early:mensura-properties))
 
@@ -48,10 +51,11 @@
        (when (null? completion)
         (set! completion (empty-completion)))
 
+       (unless (assoc-ref completion dur-log)
+        (ly:error "No duration provided for rhythmic-event. Perhaps a typing mistake or '128' set as a duration somewhere?"))
+
        (if perfect
-
         (ly:error "Perfect is not implemented yet")
-
         (assoc-set! completion dur-log
          (+ (assoc-ref completion dur-log)
            (if expecting-perfect

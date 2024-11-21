@@ -12,10 +12,10 @@
 \include "stencils/noteheads.ly"
 
 % engravers
+\include "engravers/Notation_engraver.ly"
 \include "engravers/Mensura_engraver.ly"
 \include "engravers/Tactus_engraver.ly"
 \include "engravers/Rest_position_engraver.ly"
-\include "engravers/Note_engraver.ly"
 
 % macra
 \include "macra/early-staff.ly"
@@ -30,30 +30,44 @@
        	\name EarlyVoice
        	\alias PetrucciVoice
 
+        \consists #early:Notation_engraver
         \consists #early:Mensura_engraver
         \consists #early:Tactus_engraver
         \consists #early:Rest_position_engraver
-        \consists #early:Note_engraver
+
         % \remove Mensural_ligature_engraver
        	% \consists Ligature_bracket_engraver
 
-        % \override NoteHead.style = #'tournai
         \override NoteHead.stencil = #early:note-head::print
 
         \override Flag.stencil = #old-straight-flag
 
-        % \override NoteHead.flag =
-
         mensura = #'()
         mensuraCompletion = #'()
-        % I need this to check if the note has completed current mensura or not.
 
+        % I need this to check if the note has completed current mensura or not.
         tactusLength = #(ly:make-moment 0 0)
         tactusPosition = #(ly:make-moment 0 0)
         tactusStartNow = ##t
 
+        % Properties from Notation_engraver
         notation = #'blackmensural
-        coloration = #'black
+        implicitColorAfterDurlog = ##f % duration neg log after which the halfening by hollow occurs (or #f if not halfing at all).
+
+
+
+
+
+
+
+        % mensuralDevices =
+        % #'((1/2 . hollow)
+        %    (2/3 . red)
+        %    (color-temporis . red)
+        %    (color-prolationis . red))
+
+
+        coloration = #'red
         colorationSecondary = #'blue % for some obscure English manuscripts
         % hollow = ##f
 
