@@ -15,6 +15,7 @@ music = \relative {
     \mark "blackmensuralhollow"
     \blackmensuralhollow \music
     \set implicitColorAfterDurlog = #+inf.0 \music \break
+    \set implicitColorAfterDurlog = 4 \music \break
     \mark "whitehollow"
     \whitehollow \music
     \set implicitColorAfterDurlog = 3 \music \break

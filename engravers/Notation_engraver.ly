@@ -1,25 +1,12 @@
 \version "2.24.3"
 
 
-% #(define (log->shape '(
-%   (-3 . 'maxima)
-%   (-2 . 'longa)
-%   (-1 . 'quadrata)
-%   (0 . '
+#(define first-ly-durlog-with-visible-stem 1) % not counting ly's longa and maxima stems
+#(define implicit-color-default 1)
+#(define last-ly-durlog-without-flag 2)
+#(define first-ly-durlog-with-flag 3)
+#(define max-dur-log -3)
 
-#(define ly-notehead-styles
-  ;; Styles relevant to early music
-  ;; found in select-head-glyph
-  ;; (under note-head::calc-glyph-name)
-  ;; relevant for notehead glyph selection.
-  ;; TO DO: would be better to get them from
-  ;; the source code automatically.
-  '(mensural
-    petrucci
-    blackpetrucci
-    semipetrucci
-    neomensural)
-)
 
 #(define (add-flag! engraver stem)
 "Add flag to stem grob
@@ -32,53 +19,28 @@ as found in stem-engraver.cc."
    flag))
 )
 
-% template for procedure adjusting noteheads using ly's styles
-#(define (adjust-STYLE-notehead! notehead implicit-color)
-  (let* ((dur-log (ly:grob-property notehead 'duration-log)))
-   (case implicit-color
-    ((()) '())
-    ((1) '())
-    ((#t) '()) ;; blackmensural
-    ((#f) '()) ;; entirely white
-    (else '()))
-))
 
-#(define (adjust-petrucci-notehead! notehead implicit-color)
-  (let* ((dur-log (ly:grob-property notehead 'duration-log)))
-   (case implicit-color
-    ((()) '())
-    ((1) '())
-    ((#t) (ly:grob-set-property! notehead 'style 'blackpetrucci)
-          (when (> dur-log 1)
-           (ly:grob-set-property! notehead 'duration-log (1+ dur-log))))
-    ((#f) (when (> dur-log 1)
-           (ly:grob-set-property! notehead 'duration-log 1)))
-    (else (cond
-           ((> dur-log implicit-color)
-            (ly:grob-set-property! notehead 'style 'blackpetrucci)
-            (ly:grob-set-property! notehead 'duration-log (1- dur-log)))
-           ((> dur-log -1)
-            (ly:grob-set-property! notehead 'duration-log 1)))))
-))
+#(define (adjust-petrucci-notehead! notehead dur-log implicit-color)
 
-#(define (adjust-blackpetrucci-notehead! notehead implicit-color)
+   (cond
+    ((> dur-log implicit-color)
+     (ly:grob-set-property! notehead 'style 'blackpetrucci)
+     (when (>= implicit-color max-dur-log)
+      (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
+    ((> dur-log implicit-color-default)
+     (ly:grob-set-property! notehead 'duration-log 1))
+   )
+
+)
+
+
+#(define (adjust-blackpetrucci-notehead! notehead dur-log implicit-color)
   (ly:grob-set-property! notehead 'style 'petrucci)
   (adjust-petrucci-notehead! notehead implicit-color)
 )
 
 
 
-
-% template for procedure adjusting stems using ly's styles
-#(define (adjust-STYLE-notehead! notehead implicit-color)
-  (let* ((dur-log (ly:grob-property notehead 'duration-log)))
-   (case implicit-color
-    ((()) '())
-    ((1) '())
-    ((#t) '()) ;; blackmensural
-    ((#f) '()) ;; entirely white
-    (else '()))
-))
 
 
 #(define-public (early:Notation_engraver context)
@@ -97,10 +59,7 @@ Also, a relevant properties for choosing a right
 note head (ink-color & hollow properties) are set.
 There are all delegated to early:GROB::print functions."
  (let (;; Lilypond static info
-       (first-ly-durlog-with-visible-stem 1) ;; not counting ly's longa and maxima stems
-       (implicit-color-default 1)
-       (ly-last-durlog-without-flag 2)
-       (first-ly-durlog-with-flag 3))
+       (dupa 0))
 
   (make-engraver
 
@@ -147,10 +106,12 @@ There are all delegated to early:GROB::print functions."
               (color-secondary coloration-secondary)))
 
       ;; correct note implicit diminution color.
-      (case style
-       ((petrucci) (adjust-petrucci-notehead! grob implicit-color))
-       ((blackpetrucci) (adjust-blackpetrucci-notehead! grob implicit-color))
-       (else (ly:warning "Note head style (WHICH???) duration-log adjustment not yet implemented."))
+      (when (not (or (null? implicit-color) (= implicit-color implicit-color-default)))
+       (case style
+        ((petrucci) (adjust-petrucci-notehead! grob dur-log implicit-color))
+        ((blackpetrucci) (adjust-blackpetrucci-notehead! grob dur-log implicit-color))
+        (else (ly:warning "Note head style (WHICH???) duration-log adjustment not yet implemented."))
+       )
       )
 
     )) ;; end of notehead-interface
@@ -165,6 +126,7 @@ There are all delegated to early:GROB::print functions."
            (implicit-color (ly:context-property context 'implicitColorAfterDurlog))
            ;; grob info
            (dur-log (ly:grob-property grob 'duration-log)))
+
       ;; Many types of notation display stem nad flags
       ;; at different moments of the note duration progression.
       ;;
@@ -177,31 +139,23 @@ There are all delegated to early:GROB::print functions."
       ;; governs on how the implicit coloration and stem
       ;; influence the note shape.
 
-      ;(if (= dur-log -3) (display "\n"))
-      ;(display dur-log)
+      (when (not (or (null? implicit-color)
+                     (= implicit-color implicit-color-default)))
 
-      (when (not (null? implicit-color))
+       (if (> dur-log 1)
+        (set! dur-log (1+ dur-log)))
 
-       ;; replace boolean values with numbers
-       ;; too allow comparisons.
-       (when (boolean? implicit-color)
-        (set! implicit-color
-         (if implicit-color -999 +inf.0)))
+       (if (and (>= implicit-color max-dur-log)
+                (> dur-log (1+ implicit-color)))
+        (set! dur-log (1- dur-log)))
 
-       (when (and (< implicit-color implicit-color-default)
-                  (<= dur-log implicit-color))
-        '()
-       )
+       (if (= implicit-color 0)
+        (set! dur-log (1- dur-log)))
 
-       (ly:grob-set-property! grob 'duration-log 2)
+       (if (>= dur-log first-ly-durlog-with-flag)
+        (add-flag! engraver grob))
 
-       ;(display (and (< -inf.0 1) (> -3 -inf.0)))
-
-       ;(if (and (< implicit-color implicit-color-default)
-       ;         (> dur-log implicit-color))
-       ; (ly:grob-set-property! grob 'duration-log (- dur-log 0))
-       ;)
-
+       (ly:grob-set-property! grob 'duration-log dur-log)
 
       )
 
