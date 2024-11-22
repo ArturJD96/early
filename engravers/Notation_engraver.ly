@@ -49,13 +49,6 @@ as found in stem-engraver.cc."
 )
 
 
-#(define (adjust-blackpetrucci-notehead! notation notehead dur-log implicit-color)
-  (ly:grob-set-property! notehead 'style 'petrucci)
-  (adjust-petrucci-notehead! notehead implicit-color)
-)
-
-
-
 
 
 #(define-public (early:Notation_engraver context)
@@ -120,7 +113,7 @@ There are all delegated to early:GROB::print functions."
       (when (not (or (null? implicit-color)))
        (apply
         (case style ((petrucci) adjust-petrucci-notehead!)
-                    ((blackpetrucci) adjust-blackpetrucci-notehead!)
+                    ((blackpetrucci) adjust-petrucci-notehead!)
                     (else (ly:error "Note head style (WHICH???) duration-log adjustment not yet implemented.")
                           adjust-petrucci-notehead!))
         (list notation grob dur-log implicit-color))
