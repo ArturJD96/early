@@ -39,6 +39,7 @@
 
 #(for-each
   (lambda (args) (apply add-mensuration args))
+  ;; ARGS: signum time-signature modus tempus prolatio proportio other proc
   '(;; https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs
     ("O"  (3 . 2) () #t #f 1 () ly:time-signature::print)
     ("O:" (3 . 2) () #t #f 1 () ly:time-signature::print-dummy) ;; After humdrum *met (https://wiki.ccarh.org/images/9/9f/Stage2-specs.html)
@@ -60,6 +61,7 @@
     ("C|." (6 . 8) () #f #t 1/2 () ly:time-signature::print-with-proportio)
     ("O|." (9 . 8) () #t #t 1/2 () ly:time-signature::print-with-proportio)
     ;; ignored by now: LilyPond's 2/4 (C|r)
+    ("O|3" (3 . 2) () #t #f 1/2 () ly:time-signature::print-with-proportio)
     ;; No time signature
     ("X" (1 . 1) #f #f #f 1 () ly:time-signature::print-x))
 )

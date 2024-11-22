@@ -54,19 +54,6 @@
         notation = #'blackmensural
         implicitColorAfterDurlog = ##f % duration neg log after which the halfening by hollow occurs (or #f if not halfing at all).
 
-
-
-
-
-
-
-        % mensuralDevices =
-        % #'((1/2 . hollow)
-        %    (2/3 . red)
-        %    (color-temporis . red)
-        %    (color-prolationis . red))
-
-
         coloration = #'red
         colorationSecondary = #'blue % for some obscure English manuscripts
         % hollow = ##f
@@ -82,6 +69,8 @@
        	\denies Voice
        	\defaultchild EarlyVoice
        	\accepts EarlyVoice
+
+        \consists "Bar_engraver"
 
         % \remove Custos_engraver
 
