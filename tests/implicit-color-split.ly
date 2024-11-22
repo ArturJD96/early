@@ -27,9 +27,22 @@ music = \relative {
     \set implicitColorAfterDurlog = -1 \music \break
     \set implicitColorAfterDurlog = -2 \music \break
     \set implicitColorAfterDurlog = -3 \music \break
-    \mark "blackmensural"
+    \mark "blackmensural (fake)"
     \set implicitColorAfterDurlog = -4 \music
-    \set implicitColorAfterDurlog = #-inf.0 \music
+    \set implicitColorAfterDurlog = -6 \music
+    \set implicitColorAfterDurlog = #-inf.0 \music \break
+    \mark "blackmensural (true, swapped colors)"
     \blackmensural \music
+    \set implicitColorAfterDurlog = #+inf.0 \music \break
+    \set implicitColorAfterDurlog = 4 \music \break
+    \set implicitColorAfterDurlog = 3 \music \break
+    \set implicitColorAfterDurlog = 2 \music \break
+    \set implicitColorAfterDurlog = 1 \music \break
+    \set implicitColorAfterDurlog = 0 \music \break
+    \set implicitColorAfterDurlog = -1 \music \break
+    \set implicitColorAfterDurlog = -2 \music \break
+    \set implicitColorAfterDurlog = -3 \music \break
+    \set implicitColorAfterDurlog = -4 \music
+    \set implicitColorAfterDurlog = -6 \music \break
 
 }
