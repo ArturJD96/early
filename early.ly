@@ -17,7 +17,7 @@ whitemensural = {
 blackmensural = {
     \set notation = #'blackmensural
     \set early-style = ##f
-    \set implicitColorAfterDurlog = #-inf.0
+    \set implicitColorAfterDurlog = #+inf.0
     \set coloration = #'red
     \set colorationSecondary = #'blue % for some obscure English manuscripts
 }

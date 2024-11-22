@@ -1,5 +1,10 @@
 \version "2.24.3"
 
+%{
+
+
+
+%}
 
 #(define first-ly-durlog-with-visible-stem 1) % not counting ly's longa and maxima stems
 #(define implicit-color-default 1)
@@ -20,21 +25,31 @@ as found in stem-engraver.cc."
 )
 
 
-#(define (adjust-petrucci-notehead! notehead dur-log implicit-color)
+#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color)
 
-   (cond
-    ((> dur-log implicit-color)
-     (ly:grob-set-property! notehead 'style 'blackpetrucci)
-     (when (>= implicit-color max-dur-log)
-      (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
-    ((> dur-log implicit-color-default)
-     (ly:grob-set-property! notehead 'duration-log 1))
-   )
+  (case notation
+   ((whitemensural)
+    (ly:grob-set-property! notehead 'style 'petrucci)
+    (cond ((> dur-log implicit-color)
+           (ly:grob-set-property! notehead 'style 'blackpetrucci)
+           (when (>= implicit-color max-dur-log)
+            (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
+          ((> dur-log implicit-color-default)
+           (ly:grob-set-property! notehead 'duration-log 1)) ))
+   ((blackmensural)
+    (ly:grob-set-property! notehead 'style 'blackpetrucci)
+    (cond ((> dur-log implicit-color)
+           (ly:grob-set-property! notehead 'style 'petrucci)
+           (if (> dur-log 0)
+            (ly:grob-set-property! notehead 'duration-log 1)
+            (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
+    ))
+  )
 
 )
 
 
-#(define (adjust-blackpetrucci-notehead! notehead dur-log implicit-color)
+#(define (adjust-blackpetrucci-notehead! notation notehead dur-log implicit-color)
   (ly:grob-set-property! notehead 'style 'petrucci)
   (adjust-petrucci-notehead! notehead implicit-color)
 )
@@ -64,10 +79,6 @@ There are all delegated to early:GROB::print functions."
   (make-engraver
 
    (acknowledgers
-
-    ;((flag-interface engraver grob source)
-    ; (display (ly:grob-property grob 'duration-log))
-    ;)
 
     ((note-head-interface engraver grob source)
      (let* (;; context properties
@@ -106,12 +117,13 @@ There are all delegated to early:GROB::print functions."
               (color-secondary coloration-secondary)))
 
       ;; correct note implicit diminution color.
-      (when (not (or (null? implicit-color) (= implicit-color implicit-color-default)))
-       (case style
-        ((petrucci) (adjust-petrucci-notehead! grob dur-log implicit-color))
-        ((blackpetrucci) (adjust-blackpetrucci-notehead! grob dur-log implicit-color))
-        (else (ly:warning "Note head style (WHICH???) duration-log adjustment not yet implemented."))
-       )
+      (when (not (or (null? implicit-color)))
+       (apply
+        (case style ((petrucci) adjust-petrucci-notehead!)
+                    ((blackpetrucci) adjust-blackpetrucci-notehead!)
+                    (else (ly:error "Note head style (WHICH???) duration-log adjustment not yet implemented.")
+                          adjust-petrucci-notehead!))
+        (list notation grob dur-log implicit-color))
       )
 
     )) ;; end of notehead-interface
