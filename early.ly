@@ -5,6 +5,8 @@
 % styles
 \include "styles/tournai.ily"
 
+\defineBarLine "|||" #'(#t #f #t)
+
 % notations
 whitemensural = {
     \set notation = #'whitemensural
