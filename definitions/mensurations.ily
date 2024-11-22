@@ -52,7 +52,7 @@
     ("C2" (4 . 4) #f #f #f 1/2 () ly:time-signature::print-with-proportio)
     ("O2" (3 . 2) #t #f #f 1 () ly:time-signature::print-with-proportio)
     ("O|" (3 . 2) () #t #f 1/2 () ly:time-signature::print)
-    ("C|3" (2 . 2) #t #f #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? What about C3?
+    ("C|3" (3 . 2) #f #t #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? What about C3?
     (3 (3 . 1) () () () 3/2 () ly:time-signature::print)
     (3/2 (3 . 1) () () () 3/2 () ly:time-signature::print)
     ("C|2" (4 . 4) #f #f #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? is it the same as C2 or prop should be 1/4?
@@ -61,7 +61,6 @@
     ("C|." (6 . 8) () #f #t 1/2 () ly:time-signature::print-with-proportio)
     ("O|." (9 . 8) () #t #t 1/2 () ly:time-signature::print-with-proportio)
     ;; ignored by now: LilyPond's 2/4 (C|r)
-    ("O|3" (3 . 2) () #t #f 1/2 () ly:time-signature::print-with-proportio)
     ;; No time signature
     ("X" (1 . 1) #f #f #f 1 () ly:time-signature::print-x))
 )
