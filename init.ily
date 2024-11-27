@@ -16,6 +16,7 @@
 \include "engravers/Mensura_engraver.ly"
 \include "engravers/Tactus_engraver.ly"
 \include "engravers/Rest_position_engraver.ly"
+\include "engravers/Augmentation_engraver.ly" % check native \shiftDurations
 
 % macra
 \include "macra/early-staff.ly"

@@ -21,3 +21,6 @@
 #(set-object-property! 'earlyMensuraOff 'translation-type? boolean?)
 #(set-object-property! 'earlyMensuraOff 'translation-doc?
 "Turn off automatic duration mensural recalculation (make it default LilyPond WYSIWYG againg).")
+
+% Augmentation engraver
+#(set-object-property! 'augmentation 'translation-type? integer?)
