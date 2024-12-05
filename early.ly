@@ -14,7 +14,7 @@
 % notations
 whitemensural = {
     \set notation = #'whitemensural
-    \set early-style = ##f
+    \set earlyStyle = ##f
     \set implicitColorAfterDurlog = #'()
     \set coloration = #black
     \set colorationSecondary = ##f % for some obscure English manuscripts
@@ -22,7 +22,7 @@ whitemensural = {
 
 blackmensural = {
     \set notation = #'blackmensural
-    \set early-style = ##f
+    \set earlyStyle = ##f
     \set implicitColorAfterDurlog = #+inf.0
     \set coloration = #manuscript-red
     \set colorationSecondary = #'blue % for some obscure English manuscripts
@@ -35,14 +35,14 @@ whitehollow = {
 
 blackmensuralhollow = {
     \whitemensural
-    \set early-style = ##f
+    \set earlyStyle = ##f
     \set implicitColorAfterDurlog = #+inf.0
 }
 
 blackmensural-chantilly = {
 
     % \set notation = #'blackmensural
-    \set early-style = #'chantilly
+    \set earlyStyle = #'chantilly
     \set coloration = #'red
     \set colorationSecondary = ##f % for some obscure English manuscripts
 
@@ -64,7 +64,7 @@ blackmensural-chantilly = {
 tournai = {
 
     % \set notation = #'blackmensural
-    \set early-style = #'tournai
+    \set earlyStyle = #'tournai
     \set coloration = #'red
     \set colorationSecondary = ##f
 

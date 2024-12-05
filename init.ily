@@ -44,6 +44,8 @@
         mensura = #'()
         mensuraCompletion = #'()
 
+        earlyStyle = ##f
+
         notation = #'blackmensural
         implicitColorAfterDurlog = 1
         coloration = #manuscript-red

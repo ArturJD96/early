@@ -9,7 +9,7 @@
 
 % Notation itself
 #(set-object-property! 'notation 'translation-type? symbol?)
-#(set-object-property! 'early-style 'translation-type? symbol?)
+#(set-object-property! 'earlyStyle 'translation-type? symbol?)
 #(set-object-property! 'coloration 'translation-type? color?)
 #(set-object-property! 'colorationSecondary 'translation-type? color?)
 #(set-object-property! 'implicitColorAfterDurlog 'translation-type? number?)

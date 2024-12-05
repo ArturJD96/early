@@ -74,7 +74,7 @@ There are all delegated to early:GROB::print functions."
     ((note-head-interface engraver grob source)
      (let* (;; context properties
             (notation (ly:context-property context 'notation))
-            (early-style (ly:context-property context 'early-style))
+            (early-style (ly:context-property context 'earlyStyle))
             (coloration (ly:context-property context 'coloration))
             (coloration-secondary (ly:context-property context 'colorSecondary))
             (implicit-color (ly:context-property context 'implicitColorAfterDurlog))
@@ -123,7 +123,7 @@ There are all delegated to early:GROB::print functions."
 
      (let (;; context properties
            (notation (ly:context-property context 'notation))
-           (early-style (ly:context-property context 'early-style))
+           (early-style (ly:context-property context 'earlyStyle))
            (coloration (ly:context-property context 'coloration))
            (coloration-secondary (ly:context-property context 'colorSecondary))
            (implicit-color (ly:context-property context 'implicitColorAfterDurlog))
