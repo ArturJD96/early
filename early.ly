@@ -4,13 +4,19 @@
 
 % styles
 \include "styles/tournai.ily"
+\include "styles/alamire.ily"
+
+\defineBarLine "|||" #'(#t #f #t)
+
+#(define-public manuscript-red (rgb-color (/ 182 255) (/ 78 255) (/ 69 255)))
+#(define-public manuscript-blue (rgb-color (/ 40 255) (/ 38 255) (/ 57 255)))
 
 % notations
 whitemensural = {
     \set notation = #'whitemensural
     \set early-style = ##f
-    \set coloration = #'fill
     \set implicitColorAfterDurlog = #'()
+    \set coloration = #black
     \set colorationSecondary = ##f % for some obscure English manuscripts
 }
 
@@ -18,24 +24,19 @@ blackmensural = {
     \set notation = #'blackmensural
     \set early-style = ##f
     \set implicitColorAfterDurlog = #+inf.0
-    \set coloration = #'red
+    \set coloration = #manuscript-red
     \set colorationSecondary = #'blue % for some obscure English manuscripts
 }
 
 whitehollow = {
     \whitemensural
-    \set early-style = ##f
     \set implicitColorAfterDurlog = 3
-    \set coloration = #'fill
-    \set colorationSecondary = ##f % for some obscure English manuscripts
 }
 
 blackmensuralhollow = {
     \whitemensural
     \set early-style = ##f
     \set implicitColorAfterDurlog = #+inf.0
-    \set coloration = #'fill
-    \set colorationSecondary = ##f % for some obscure English manuscripts
 }
 
 blackmensural-chantilly = {

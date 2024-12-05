@@ -14,8 +14,8 @@
 % engravers
 \include "engravers/Notation_engraver.ly"
 \include "engravers/Mensura_engraver.ly"
-\include "engravers/Tactus_engraver.ly"
 \include "engravers/Rest_position_engraver.ly"
+\include "engravers/Augmentation_engraver.ly" % check native \shiftDurations
 
 % macra
 \include "macra/early-staff.ly"
@@ -32,7 +32,6 @@
 
         \consists #early:Notation_engraver
         \consists #early:Mensura_engraver
-        \consists #early:Tactus_engraver
         \consists #early:Rest_position_engraver
 
         % \remove Mensural_ligature_engraver
@@ -45,31 +44,7 @@
         mensura = #'()
         mensuraCompletion = #'()
 
-        % I need this to check if the note has completed current mensura or not.
-        tactusLength = #(ly:make-moment 0 0)
-        tactusPosition = #(ly:make-moment 0 0)
-        tactusStartNow = ##t
-
         % Properties from Notation_engraver
-        notation = #'blackmensural
-        implicitColorAfterDurlog = ##f % duration neg log after which the halfening by hollow occurs (or #f if not halfing at all).
-
-
-
-
-
-
-
-        % mensuralDevices =
-        % #'((1/2 . hollow)
-        %    (2/3 . red)
-        %    (color-temporis . red)
-        %    (color-prolationis . red))
-
-
-        coloration = #'red
-        colorationSecondary = #'blue % for some obscure English manuscripts
-        % hollow = ##f
 
        	\description "..." % TODO
 
@@ -83,6 +58,8 @@
        	\defaultchild EarlyVoice
        	\accepts EarlyVoice
 
+        \consists "Bar_engraver"
+
         % \remove Custos_engraver
 
         % \override StaffSymbol.stencil = #(early-staff jagged-line)
@@ -93,6 +70,12 @@
         \override TimeSignature.style = #'mensural
 
        	\description "..." % TODO
+
+        alterationGlyphs =
+        #'((-1/2 . "accidentals.hufnagelM1")
+	       (0 . "accidentals.vaticana0")
+	       (1/2 . "accidentals.mensural1"))
+
     }
 
     \inherit-acceptability EarlyStaff PetrucciStaff
