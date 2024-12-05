@@ -73,8 +73,10 @@
     music)))
 
 
-#(define (early:duration-mensurate dur mensura-properties)
-  (let* ((props mensura-properties)
+#(define (early:duration-mensurate event mensura-properties)
+  (let* ((dur (ly:music-property event 'duration))
+         (is-rest (music-is-of-type? event 'rest-event))
+         (props mensura-properties)
          (props:get (lambda (key) (assoc-ref props key)))
          (props:is  (lambda (k v) (eq? (props:get k) v)))
 
@@ -82,7 +84,7 @@
          (perfection (props:get 'perfection))
          (proportio (props:get 'proportio))
          (proportion (if (fraction? proportio) proportio (/ 1 proportio)))
-         (default-ternary (props:get 'default-ternary))
+         (default-ternary (or (props:get 'default-ternary) is-rest))
 
          (punctum-perfectionis (props:get 'punctum-perfectionis))
 
@@ -132,7 +134,8 @@ mensura =
   (let* ((mensuration-properties (assoc-ref all-mensurations signum))
          (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
     (unless mensuration-properties
-    (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration procedure."))
+     (display signum)
+     (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration procedure."))
     #{
         #(mensuration mensuration-properties)
         \time #time-signature-dummy
@@ -219,7 +222,7 @@ mensural =
       ((music-is-of-type? m 'rhythmic-event)
        (ly:music-set-property! m 'early:mensura-properties (alist-copy mensura-properties))
        (ly:music-set-property! m 'duration
-        (early:duration-mensurate (ly:music-property m 'duration) mensura-properties))
+        (early:duration-mensurate m mensura-properties))
        m)
 
      (else m)))
@@ -312,3 +315,24 @@ hollow = % better use context?
   %   (ly:music-property music 'elements)
   %   (list (make-music 'early:ColorMinorEnd))))
   % music)
+
+fbreak = \tag #'early:facsimile \break
+
+stemU = \tag #'early:facsimile-stem-direction \stemUp
+stemD = \tag #'early:facsimile-stem-direction \stemDown
+stemN = \tag #'early:facsimile-stem-direction \stemNeutral
+
+oStemU = \tag #'early:facsimile-stem-direction \once \stemUp
+oStemD = \tag #'early:facsimile-stem-direction \once \stemDown
+oStemN = \tag #'early:facsimile-stem-direction \once \stemNeutral
+
+syl =
+#(define-music-function (lyric music) (string? ly:music?)
+  music)
+
+perf =
+#(define-music-function (music) (ly:music?) #{
+    \perfect
+    #music
+    \imperfect % TO DO: NOT LIKE THIS!!! check first if imperfectum was the case indeed.
+#})

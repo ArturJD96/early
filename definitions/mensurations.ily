@@ -39,6 +39,7 @@
 
 #(for-each
   (lambda (args) (apply add-mensuration args))
+  ;; ARGS: signum time-signature modus tempus prolatio proportio other proc
   '(;; https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs
     ("O"  (3 . 2) () #t #f 1 () ly:time-signature::print)
     ("O:" (3 . 2) () #t #f 1 () ly:time-signature::print-dummy) ;; After humdrum *met (https://wiki.ccarh.org/images/9/9f/Stage2-specs.html)
@@ -51,7 +52,7 @@
     ("C2" (4 . 4) #f #f #f 1/2 () ly:time-signature::print-with-proportio)
     ("O2" (3 . 2) #t #f #f 1 () ly:time-signature::print-with-proportio)
     ("O|" (3 . 2) () #t #f 1/2 () ly:time-signature::print)
-    ("C|3" (2 . 2) #t #f #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? What about C3?
+    ("C|3" (3 . 2) #f #t #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? What about C3?
     (3 (3 . 1) () () () 3/2 () ly:time-signature::print)
     (3/2 (3 . 1) () () () 3/2 () ly:time-signature::print)
     ("C|2" (4 . 4) #f #f #f 1/2 () ly:time-signature::print-with-proportio) ;; ??? is it the same as C2 or prop should be 1/4?

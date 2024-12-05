@@ -48,6 +48,61 @@
          (when (not stop-condition)
                (blur-stencil (- x-next (random step) )))))
 
+     staff-line-stencil)
+)
+
+
+
+
+#(define-public (delicate-jagged-line x-start-stop-pair thickness)
+
+    ;; TO DO: this is exact coppy of jagged-line.
+    ;; It should be merged with jagged-line
+    ;; and the properties should be abstracted.
+
+   (let* ((x-begin (car x-start-stop-pair))
+          (x-end (cdr x-start-stop-pair))
+          (random-state (random-state-from-platform))
+          ;; randomization settings
+          (step-min 0.166)
+          (extremity 0.333)
+          ;; basic form
+          (staff-line-stencil (make-line-stencil thickness x-begin 0 x-end 0)))
+
+     (let blur-stencil ((x-curr x-begin))
+       (let* ((step (+ step-min (random 0.666 random-state)))
+              (x-expected (+ x-curr step))
+              (stop-condition (> x-expected x-end))
+              (x-next (if stop-condition x-end x-expected)))
+
+         (set! staff-line-stencil
+          (ly:stencil-add
+           staff-line-stencil
+           ;(ly:round-polygon
+           ; (list (cons x-curr (- thickness))
+           ;       (cons (+ x-curr step) thickness))
+           ; 0 ;blot
+           ; 0 ;extroversion
+           ; #t))) ; filled
+           (make-line-stencil
+            thickness ;(/ thickness extremity)
+            x-curr
+            (* extremity
+               (- thickness
+                  (random (* 2. thickness) random-state)))
+            x-next
+            (* extremity
+               (- thickness
+                  (random (* 2. thickness) random-state)))
+            )))
+
+            ; Nota bene: different approach would be to assemble
+            ; the polygon from which the staff line is constructed.
+
+         ;; loop back
+         (when (not stop-condition)
+               (blur-stencil (- x-next (random step) )))))
+
      staff-line-stencil))
 
 

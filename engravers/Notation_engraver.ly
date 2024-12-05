@@ -49,8 +49,6 @@ as found in stem-engraver.cc."
 )
 
 
-
-
 #(define-public (early:Notation_engraver context)
 "This Engraver handles setting correct early grob
 rhythmic-event properties based on event duration.

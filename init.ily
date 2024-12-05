@@ -44,7 +44,10 @@
         mensura = #'()
         mensuraCompletion = #'()
 
-        % Properties from Notation_engraver
+        notation = #'blackmensural
+        implicitColorAfterDurlog = 1
+        coloration = #manuscript-red
+        % colorationSecondary = #manuscript-blue % for some obscure English manuscripts
 
        	\description "..." % TODO
 
