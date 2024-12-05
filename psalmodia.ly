@@ -107,17 +107,19 @@ hemistich = #(define-music-function
        (procedure? arg)) ;; this doesn't work :/
 )
 
+red-manuscript = #(rgb-color (/ 182 255) (/ 78 255) (/ 69 255))
+
 versus = #(define-music-function
 (voice-name lambda-for-formating hemistich-1 hemistich-2)
 ((string?) (procedure-not-music? early:psalmus-text-format) ly:music? ly:music?)
 #{
     \lyrics {
+        #(when voice-name
+          #{ \override Lyrics.LyricText.color = #red-manuscript #})
         \hemistich #lambda-for-formating #hemistich-1
         \hemistich #lambda-for-formating #hemistich-2
     }
 #})
-
-
 
 %{
 

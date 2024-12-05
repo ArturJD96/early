@@ -53,7 +53,7 @@
 
         % Properties from Notation_engraver
         notation = #'blackmensural
-        implicitColorAfterDurlog = ##f % duration neg log after which the halfening by hollow occurs (or #f if not halfing at all).
+        implicitColorAfterDurlog = 1
 
         coloration = #'red
         colorationSecondary = #'blue % for some obscure English manuscripts
@@ -83,6 +83,12 @@
         \override TimeSignature.style = #'mensural
 
        	\description "..." % TODO
+
+        alterationGlyphs =
+        #'((-1/2 . "accidentals.hufnagelM1")
+	       (0 . "accidentals.vaticana0")
+	       (1/2 . "accidentals.mensural1"))
+
     }
 
     \inherit-acceptability EarlyStaff PetrucciStaff

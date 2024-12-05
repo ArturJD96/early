@@ -51,7 +51,7 @@ as found in stem-engraver.cc."
 
 #(define (adjust-blackpetrucci-notehead! notation notehead dur-log implicit-color)
   (ly:grob-set-property! notehead 'style 'petrucci)
-  (adjust-petrucci-notehead! notehead implicit-color)
+  (adjust-petrucci-notehead! notation notehead dur-log implicit-color)
 )
 
 

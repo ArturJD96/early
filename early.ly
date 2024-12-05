@@ -4,6 +4,7 @@
 
 % styles
 \include "styles/tournai.ily"
+\include "styles/alamire.ily"
 
 \defineBarLine "|||" #'(#t #f #t)
 
