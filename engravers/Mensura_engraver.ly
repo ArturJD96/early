@@ -6,13 +6,13 @@
 #(define (empty-completion)
   (let* ((min-log 7)  ;; neg dur-log
          (max-log -3) ;; neg dur-log
-         (completions (let c ((i max-log)
-                              (l '()))
-                       (if (< i min-log)
-                        (c (1+ i) (append l (list (cons i 0))))
-                        l))))
+         (completions
+          (let c ((i max-log)
+                  (l '()))
+           (if (< i min-log)
+               (c (1+ i) (append l (list (cons i 0))))
+            l))))
    completions))
-
 
 
 #(define-public (early:Mensura_engraver context)

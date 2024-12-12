@@ -20,7 +20,6 @@ accidens =
 
 superius = \mensural \relative e' {
 
-    \blackmensural-chantilly
 	\clef "mensural-c2"
     \mensura "O"
 
@@ -314,7 +313,7 @@ superius = \mensural \relative e' {
 
 \layout {
 
-	ragged-right = ##f
+	% ragged-right = ##f
 	indent = 0
 
 	\enablePolymeter
@@ -322,13 +321,21 @@ superius = \mensural \relative e' {
 	% Trick to have the staff lines drawn till the end of line
 	% but respecting 'ragged-last' of the music
 	% (not stretching music till the end.
-	\override Staff.StaffSymbol.width =
-	#(lambda (grob)
-	  (ly:output-def-lookup (ly:grob-layout grob) 'line-width))
+	% \override Staff.StaffSymbol.width =
+	% #(lambda (grob)
+	%   (ly:output-def-lookup (ly:grob-layout grob) 'line-width))
 
 	\context {\Score
 		\override SpacingSpanner.packed-spacing = ##t
 	}
+
+	\context {\EarlyStaff
+	   \override StaffSymbol.stencil = #(early-staff penned-line)
+	}
+	\context {\EarlyVoice
+        \chantilly
+	}
+
 
 	% \context {	\BlackMensuralStaff
 

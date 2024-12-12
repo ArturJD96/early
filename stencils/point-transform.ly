@@ -99,10 +99,3 @@
   (cdr (reverse (map list xs-pulled ys-flipped)))
 
 ))
-
-
-
-
-
-
-% #(define-public (early:translate-path path point)

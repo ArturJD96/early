@@ -57,15 +57,6 @@
 ))
 
 
-
-
-
-
-
-
-
-
-
 #(define-public (early:pipeline->features grob pipeline)
   "Resolve pipeline into values represented as alist.
 
