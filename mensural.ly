@@ -295,7 +295,7 @@ colorMinor =
   ;; because the 'mensural' function will take care of it separately.
   (early:music-set-property! music-sequence 'color-minor #t)
   #{
-    \set EarlyVoice.earlyColor = #'black % TO DO: use the default color used for imperfectum.
+    \set EarlyVoice.coloration = #black % TO DO: use the default color used for imperfectum.
     #music-sequence
   #})
 
@@ -328,7 +328,54 @@ oStemN = \tag #'early:facsimile-stem-direction \once \stemNeutral
 
 syl =
 #(define-music-function (lyric music) (string? ly:music?)
-  music)
+  "
+  Inserts \\melisma and \\melismaEnd contexts
+  after the first note and after last event.
+
+  NOTE: this does not check if melisma is there
+  ISSUE: 'melisma' might not be semantic here...
+  "
+
+  (define (get-first-note-index elems)
+   (let loop ((elems elems) (index 0))
+    (cond ((null? elems) #f)
+          ((music-is-of-type? (car elems) 'note-event) index)
+          (else (loop (cdr elems) (1+ index))))))
+
+  (define (insert elems elem index)
+   (let loop ((front '()) (tail elems) (i 0))
+    (if (null? tail)
+     front
+     (loop (if (= i index)
+            (append front (list (car tail) #{ \melisma #}))
+            (append front (list (car tail))))
+           (cdr tail)
+           (1+ i))
+    )))
+
+  (define (insert-melisma-after-first-note mus)
+   (let ((melisma-inserted #f))
+    (music-map
+     (lambda (m)
+      (let* ((elems (ly:music-property m 'elements))
+             (first-note-index (get-first-note-index elems))
+             (insertable (and (not melisma-inserted) first-note-index)))
+       (when insertable
+       ; (ly:music-set-property! m 'elements
+       ;  (insert elems #{ \melisma #} first-note-index))
+        (ly:music-set-property! m 'elements
+         (insert elems #{ \melisma #} first-note-index))
+        (set! melisma-inserted #t))
+       m))
+     mus)))
+
+  (define (insert-melisma-end mus)
+   (ly:music-set-property! mus 'elements
+    (append! (ly:music-property mus 'elements) (list #{ \melismaEnd #})))
+   mus)
+
+  (insert-melisma-end
+   (insert-melisma-after-first-note music)))
 
 perf =
 #(define-music-function (music) (ly:music?) #{
