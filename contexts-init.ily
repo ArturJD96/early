@@ -24,8 +24,6 @@
 
 \layout {
 
-    ragged-right = ##t %% this is deliberate: we need to get around its limitations!
-
     \context { \PetrucciVoice
 
        	\name EarlyVoice

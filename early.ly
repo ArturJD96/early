@@ -1,6 +1,7 @@
 \version "2.24.3"
 
 \include "contexts-init.ily"
+\include "layout-init.ily"
 
 %% styles
 \include "styles/tournai.ily"
