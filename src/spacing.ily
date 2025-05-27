@@ -1,5 +1,3 @@
-#(set-global-staff-size 60) % ridiculously big to see differences.
-
 #(define-public (early:X-extent mode context-name grob-name preset)
   "Change many grob's properties related to spacing
   at the same time using presets.
