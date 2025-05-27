@@ -1,11 +1,12 @@
 \version "2.24.3"
 
-\include "contexts-init.ily"
-\include "layout-init.ily"
+\include "src/contexts.ily"
+\include "src/layout.ily"
+\include "src/spacing.ily"
 
 %% styles
-\include "styles/tournai.ily"
-\include "styles/alamire.ily"
+\include "src/styles/tournai.ily"
+\include "src/styles/alamire.ily"
 
 \defineBarLine "|||" #'(#t #f #t)
 
