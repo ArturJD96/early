@@ -7,8 +7,13 @@
     \context { \Score
 
         % \remove Forbid_line_break_engraver
-        #(display "\nEarly: removing bar numbers.")
+        #(display "\n🌺 Removing bar numbers.")
         \remove Bar_number_engraver
+
+        #(display "\n🌺 Overriding StaffSymbol width.")
+        \override StaffSymbol.width =
+    	#(lambda (grob)
+    	  (ly:output-def-lookup (ly:grob-layout grob) 'line-width))
 
     }
 
