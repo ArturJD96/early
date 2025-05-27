@@ -10,6 +10,8 @@
     – spacing-alist is not taken into account.
 %}
 
+% NOTE: requires 'barify' to work with music.
+
 #(define (grob-width grob)
 
 ;; Not reading from Score context... get it better from EarlyVoice!

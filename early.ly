@@ -8,7 +8,24 @@
 \include "src/styles/tournai.ily"
 \include "src/styles/alamire.ily"
 
+\include "src/music/line-breaking.ily"
+\include "src/music/lyrics.ily"
+
+\include "mensural.ly"
+
 \defineBarLine "|||" #'(#t #f #t)
+
+
+% NOTE: make this bar NOT COUNTING in the bar counts!
+% NOTE: make it private and linked to the early:Line_break_engraver.
+
+%{
+
+    Main command for engraving music.
+
+%}
+early = \barify \subscribed \mensural \etc
+
 
 % notations
 whitemensural = {
