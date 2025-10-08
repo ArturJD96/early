@@ -61,24 +61,24 @@ triplum = \mensural \relative {
 
 }
 
-% \layout {
+\layout {
 
-%     indent = 0
-%     ragged-right = ##t
+    indent = 0
+    ragged-right = ##t
 
-%     \context { \Score
+    \context { \Score
 
-%         \override SpacingSpanner.packed-spacing = ##t
+        \override SpacingSpanner.packed-spacing = ##t
 
-%     }
+    }
 
-%     \context { \EarlyVoice
+    \context { \EarlyVoice
 
-%         #(display "Raz!")
+        #(display "Raz!")
 
-%     }
+    }
 
-% }
+}
 
 \score {<<
 
