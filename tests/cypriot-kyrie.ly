@@ -61,24 +61,24 @@ triplum = \mensural \relative {
 
 }
 
-\layout {
+% \layout {
 
-    indent = 0
-    ragged-right = ##t
+%     indent = 0
+%     ragged-right = ##t
 
-    \context { \Score
+%     \context { \Score
 
-        \override SpacingSpanner.packed-spacing = ##t
+%         \override SpacingSpanner.packed-spacing = ##t
 
-    }
+%     }
 
-    \context { \EarlyVoice
+%     \context { \EarlyVoice
 
-        #(display "Raz!")
+%         #(display "Raz!")
 
-    }
+%     }
 
-}
+% }
 
 \score {<<
 
@@ -89,17 +89,17 @@ triplum = \mensural \relative {
         \new EarlyVoice \triplum
     }
 
-    \new PetrucciStaff \with {
-        instrumentName = "P."
-        shortInstrumentName = "P."
-    } {
-        \new PetrucciVoice \repeat unfold 120 { d'2 }
-    }
+    % \new PetrucciStaff \with {
+    %     instrumentName = "P."
+    %     shortInstrumentName = "P."
+    % } {
+    %     \new PetrucciVoice \repeat unfold 120 { d'2 }
+    % }
 
-    \new PetrucciStaff {
-        \new PetrucciVoice \relative {
-            d' d d d
-        }
-    }
+    % \new PetrucciStaff {
+    %     \new PetrucciVoice \relative {
+    %         d' d d d
+    %     }
+    % }
 
 >>}
