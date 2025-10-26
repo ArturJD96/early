@@ -116,6 +116,8 @@
       (step grob))
      ;((rhythmic-grob-interface engraver grob source)
      ; (display grob))
+     ((mensural-ligature-interface engraver grob source)
+      '()) ;; To do & research more. Is it already processed (or neglected) in note-column-interface?
      ((note-column-interface engraver grob source)
       ;; Well, changing e.g. NoteHeads extra-width-offset
       ;; does not affect note column width.
