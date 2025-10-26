@@ -18,7 +18,11 @@ as found in stem-engraver.cc."
 ))
 
 
-#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color)
+#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color colored)
+
+  (when colored
+   (set! implicit-color +inf.0)
+   (set! notation 'blackmensural)) ;; what about hollow whitemensural?
 
   (case notation
 
@@ -81,6 +85,7 @@ There are all delegated to early:GROB::print functions."
             (color-minor (assoc-ref mensura-properties 'color-minor))
             (color-secondary (assoc-ref mensura-properties 'color-secondary))
             (hollow (assoc-ref mensura-properties 'hollow))
+            (colored (or color color-minor))
            )
 
       ;; check out: select-head-glyph
@@ -94,17 +99,16 @@ There are all delegated to early:GROB::print functions."
       (ly:grob-set-property! grob 'early-style early-style)
       (ly:grob-set-property! grob 'early-hollow hollow)
       (ly:grob-set-property! grob 'early-color
-       (cond ((or color color-minor) coloration)
-              (color-secondary coloration-secondary)))
+       (if color-secondary coloration-secondary coloration))
 
       ;; correct note implicit diminution color.
-      (when (not (or (null? implicit-color)))
+      (when (or (not (null? implicit-color)) colored)
        (apply
         (case style ((petrucci) adjust-petrucci-notehead!)
                     ((blackpetrucci) adjust-petrucci-notehead!)
                     (else (ly:error "Note head style (WHICH???) duration-log adjustment not yet implemented.")
                           adjust-petrucci-notehead!))
-        (list notation grob dur-log implicit-color))
+        (list notation grob dur-log implicit-color colored))
       )
 
     )) ;; end of notehead-interface

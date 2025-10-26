@@ -215,13 +215,22 @@ mensural =
                      (props:set! key val))))
          props-new)
         m))
-      ;; handle color minor apart
+
       ((and (music-is-of-type? m 'sequential-music)
             (early:mensura-property m 'color-minor))
        (early:handle-color-minor m mensura-properties))
-      ;; adjust duration
+      ;; adjust duration and handle color-minor.
       ((music-is-of-type? m 'rhythmic-event)
-       (ly:music-set-property! m 'early:mensura-properties (alist-copy mensura-properties))
+       ;; override default properties with the already set ones.
+       (let ((props-by-far (ly:music-property m 'early:mensura-properties))
+             (default-props (alist-copy mensura-properties)))
+        (for-each (lambda (prop)
+                   (let ((key (car prop))
+                         (val (cdr prop)))
+                    (set! default-props
+                     (assoc-set! default-props key val))))
+         props-by-far)
+         (ly:music-set-property! m 'early:mensura-properties default-props))
        (ly:music-set-property! m 'duration
         (early:duration-mensurate m mensura-properties))
        m)
