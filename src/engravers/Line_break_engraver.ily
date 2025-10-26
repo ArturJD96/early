@@ -15,7 +15,6 @@
 #(define (grob-width grob)
 
 ;; Not reading from Score context... get it better from EarlyVoice!
-
   (let ((extent (ly:grob-property grob 'X-extent))
         (extra (ly:grob-property grob 'extra-spacing-width))
         (padding (ly:grob-property grob 'padding)))
@@ -78,6 +77,7 @@
     (listeners
      ((break-event engraver event)
       (break-line! 0)))
+
     (acknowledgers
 
      ((bar-line-interface engraver grob source) ;; make it more precise
@@ -122,6 +122,9 @@
       ;; Should I just get the bigger available value
       ;; (i.e. notehead vs stem vs column vs dot???)?
       (when breaks (set! breaks #f))
-      (step grob))
+      (when (not (null? (ly:grob-property grob 'stencil)))
+       ;; This check is needed for the following situations:
+       ;; – a ligature. It does not have a stencil!
+       (step grob)))
     )
 )))
