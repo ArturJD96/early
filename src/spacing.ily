@@ -66,7 +66,7 @@
     (next-note . (fixed-space . 0))
     (right-edge . (extra-space . 0))))
 
-\layout {
+earlyLayout = \layout {
 
     indent = 0
     ragged-right = ##t % behaves INTERESTING if set to false!
