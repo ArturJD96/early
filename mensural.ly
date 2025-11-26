@@ -329,16 +329,6 @@ hollow = % better use context?
   %   (list (make-music 'early:ColorMinorEnd))))
   % music)
 
-fbreak = \tag #'early:facsimile \break
-
-stemU = \tag #'early:facsimile-stem-direction \stemUp
-stemD = \tag #'early:facsimile-stem-direction \stemDown
-stemN = \tag #'early:facsimile-stem-direction \stemNeutral
-
-oStemU = \tag #'early:facsimile-stem-direction \once \stemUp
-oStemD = \tag #'early:facsimile-stem-direction \once \stemDown
-oStemN = \tag #'early:facsimile-stem-direction \once \stemNeutral
-
 % syl =
 % #(define-music-function (lyric music) (string? ly:music?)
 %   "
