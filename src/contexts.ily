@@ -16,6 +16,7 @@
 \include "engravers/Mensura_engraver.ly"
 \include "engravers/Rest_position_engraver.ly"
 \include "engravers/Augmentation_engraver.ly" % check native \shiftDurations
+\include "engravers/Palaeography_engraver.ly" % check native \shiftDurations
 
 %% macra
 \include "macra/early-staff.ly"
@@ -79,7 +80,34 @@
 
     }
 
+    \context { \Lyrics
+
+        \name EarlyLyrics
+        \alias Lyrics
+        \description "..."
+
+        \consists #early:Palaeography_engraver
+            early-font-config = #'(
+             (allographs . #t)
+             (ligatures . #t)
+            )
+            early-font-allographs = #'(
+             (i-dotless . auto)
+             (i-helper-dot . never)
+             (m-final . indicated)
+             (r-rotundum . auto)
+             (s-long . auto)
+             (v-as-u . auto)
+            )
+            early-font-ligatures = #'(
+             (et . indicated) ; 'ampersand: [et], tironian: [et]*
+            )
+            early-font-pure-unicode = ##t
+
+    }
+
     \inherit-acceptability EarlyStaff PetrucciStaff
     \inherit-acceptability EarlyVoice PetrucciVoice
+    \inherit-acceptability EarlyLyrics Lyrics
 
 }

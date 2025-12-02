@@ -1,3 +1,6 @@
+\version "2.24.4"
+% \include "../contexts.ily"
+
 syl =
 #(define-music-function (syllable music) (string? ly:music?)
   (ly:music-set-property! music 'early:lyrics syllable)
@@ -61,7 +64,7 @@ into a proper Lyrics contexts."
      (make-music 'ContextSpeccedMusic
       'create-new #t
       'property-operations '()
-      'context-type 'Lyrics
+      'context-type 'EarlyLyrics
       'element
       (make-music 'SequentialMusic
        'elements

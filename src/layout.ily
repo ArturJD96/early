@@ -21,7 +21,7 @@
 
     \context { \Lyrics
         #(display "\n🪷→🌺 Overriding lyrics placement.")
-        \override LyricText.X-offset = #early:calc-x-offset-based-on-syllable-length
+        % \override LyricText.X-offset = #early:calc-x-offset-based-on-syllable-length
     }
 
 }
