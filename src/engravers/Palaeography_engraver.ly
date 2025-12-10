@@ -13,23 +13,25 @@
 
 %{
     Early Spelling Rules
+
+    Note: the '*' used for handling scribal exceptions
+    is already part of [:punct:] character class.
 %}
 
 #(define-public early:spelling-rules '(
-
+  ;; (rule . auto (auto . indicated))
   (allographs . (
-   (i-dotless . "i")
-   (i-helper-dot . "[mnuwv]i[mnuwv]")
-   (m-final . "m[\\.,:;\\?!]?$")
-   (r-rotundum . "[OBPHDobphd]r") ; d only in fractur though.
-   (s-long . "s[\\.,:;\\?!]?^$")
-   (v-as-u . "v")
+   (i-dotless . ("i" . "i*"))
+   (i-helper-dot . ("[mnuwv]i[mnuwv]" . "[mnuwv]i[mnuwv]"))
+   (m-final . ("m[[:punct:]]*(\\s|$)" . "m\\*")) ; tested.
+   (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
+   (s-long . ("s\\B" . "s")) ; under testing.
+   (v-as-u . ("v" . "v"))
   ))
   (ligatures .  (
-   (nasals . "[aeiou][mn]")
-   (us-final . "us[\\.,:;\\?!]?$")
+   (nasals . ("[aeiou][mn]" . "[aeiou][mn]"))
+   (us-final . ("us[\\.,:;\\?!]?$" . "us[\\.,:;\\?!]?$"))
   ))
-
 ))
 
 
@@ -62,17 +64,26 @@
   (make-engraver
    (acknowledgers
     ((lyric-syllable-interface engraver grob source)
-     (let* ((text (ly:grob-property grob 'text))
-            (font (ly:grob-property grob 'font-name))
-
+     (let* ((unicode (ly:context-property context 'early-font-pure-unicode))
             (font-config (ly:context-property context 'early-font-config))
             (allographs (ly:context-property context 'early-font-allographs))
             (ligatures (ly:context-property context 'early-font-ligatures))
-            (glyphs (assoc-ref early:supported-fonts font))
-            ;;
 
-            ;(font-config (ly:grob-property grob '))
+            (text (ly:grob-property grob 'text))
+            (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
+            ;; has hyphen?
+            (event (ly:grob-property grob 'cause))
+            (music (ly:event-property event 'music-cause))
+            (articulations (ly:music-property music 'articulations))
+            (has-hyphen (any (lambda (a)
+                              (eq? 'HyphenEvent (ly:music-property a 'name)))
+                             articulations))
+            (next-syllable-token "FOLLOWING-SYLLABLE::")
+
+            (glyphs (assoc-ref early:supported-fonts font))
            )
+
+      ;; This needs to be refactor and made shallow.
 
       (when (assq-ref font-config 'allographs)
        (for-each
@@ -80,36 +91,48 @@
          (let* ((spelling-rule (car kv))
                 (value (cdr kv))
                 (allographs (assq-ref early:spelling-rules 'allographs))
-                (regex (assq-ref allographs spelling-rule))
+                (allograph (assq-ref allographs spelling-rule))
                 (glyph (assq-ref glyphs spelling-rule))
                )
+          (cond
+           ((not allograph)
+            (ly:warning "🥀 Palaeography: unsupported allograph:")(display spelling-rule)(display " for font ")(display font)(newline))
+           ((not glyph)
+            (ly:warning "🥀 Palaeography: unsupported glyph:")(display spelling-rule)(display " for font ")(display font)(newline)
+            (set! glyph "???"))
+           (else
+            (let ((regex-auto (car allograph))
+                  (regex-indicated (cdr allograph)))
 
-          (when (not regex)
-           (ly:warning "🥀 Palaeography: unsupported allograph:")(display spelling-rule)(display " for font ")(display font)
-           (newline))
-          (when (not glyph)
-           (ly:warning "🥀 Palaeography: unsupported glyph:")(display spelling-rule)(display " for font ")(display font)
-           (newline))
+             (set! text
+              (regexp-substitute/global #f regex-auto (if has-hyphen (string-append text next-syllable-token) text) 'pre
+               (lambda (m)
+                (let* ((str (match:substring m))
+                       (exception-symbol "\\*")
+                       (asterisk-match (string-match exception-symbol str))
+                      )
+                (if asterisk-match
+                 (string-append (match:prefix asterisk-match) (match:suffix asterisk-match))
+                 (string-append glyph (match:suffix (string-match "\\w*" str))))
+               ))
+               'post)
+             )
 
-          ;(display text)(display glyph)(display (string? text))(newline)
-          (regexp-substitute/global #f regex text 'pre glyph 'post)
+             (when has-hyphen
+              (set! text
+               (match:prefix (string-match next-syllable-token text))))
 
-          (case value
-           ((auto) '())
-           ((indicated) '())
-           ((never) '())
-           (else '()))
-
+            )
+           )
+          )
         ))
 
         allographs)
 
-
-
       )
 
-
-
       (when (assq-ref font-config 'ligatures) '())
+
+      (ly:grob-set-property! grob 'text text)
      )
 ))))
