@@ -54,6 +54,15 @@
    (nasals . "~") ; "append to letter" hook?
    (us-final . "")
   ))
+  ("__unicode__" . (
+   (i-dotless . "i")
+   (i-helper-dot . "i")
+   (m-final . "m")
+   (r-rotundum . "r")
+   (s-long . "s")
+   (nasals . "~")⁹
+   (us-final . "⁹")
+  ))
 
 ))
 
@@ -73,6 +82,11 @@
 
             ;(font-config (ly:grob-property grob '))
            )
+
+      ; (when (not glyphs)
+      ;  (ly:warning "🥀 Palaeography: unsupported font")(display font)
+      ; )
+      (when glyphs
 
       (when (assq-ref font-config 'allographs)
        (for-each
@@ -111,5 +125,5 @@
 
 
       (when (assq-ref font-config 'ligatures) '())
-     )
+     ))
 ))))
