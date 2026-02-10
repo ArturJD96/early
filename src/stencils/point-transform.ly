@@ -1,25 +1,5 @@
 \version "2.24.4"
-%% Copied from 2.25's lily-library.
-%% This should be REMOVED in the next version
-%% when the code becomes native.
-#(define-syntax-public assert
-  (lambda (sintax)
-    (syntax-case sintax ()
-      ((assert condition)
-       #'(when (not condition)
-           (error (format #f "assertion ~s failed"
-                          'condition))))
-      ((assert condition message)
-       #'(when (not condition)
-           (error (format #f "assertion ~s failed with message: ~a"
-                          'condition message)))))))
-%% Here ends this shameless copy-paste.
-#(define (assert-equal actual expected)
-  (let ((result (equal? actual expected)))
-   (when (not result)
-    (error
-     (format #f "\n🥀 Assertion failed.\n* expected : ~a\n* actual   : ~a\n"
-      expected actual)))))
+\include "assert.ly"
 
 %
 % Code begins.
@@ -35,7 +15,10 @@
    for make-path-stencil's commands (e.g. moveto).
    Note: 'coord' is a list of consecutive x and y values."
   ; ... additional type checks should go here.
+  (when (odd? (length coords))
+   (ly:error "Number of point coordinates must be even."))
   coords)
+
 #(define (points:list points)
   "Returns points as list of lists (used e.g. in
    make-connected-path-stencil's pointlist)."
@@ -55,36 +38,55 @@
 #(assert-equal (points:pairs (points 1 2 3 4 5 6))
                '((1 . 2)(3 . 4)(5 . 6)))
 
+#(define (curve x1 y1 x2 y2 x3 y3)
+  "Returns a list of coordinates for
+   a lilypond-supported bezier-curve.
+   Note: the first point of the curve
+   will be either (0 . 0) or the last point
+   provided within the path."
+  (list x1 y1 x2 y2 x3 y3))
+#(assert-equal (curve 1 2 3 4 5 6) '(1 2 3 4 5 6))
+% #(assert-error (curve 1 2 3 4))
 
 %% Here I recreate postscript-like commands
 %% used for the make-path-stencil path.
-#(define (postscript-command cmd point-or-points . coords)
-  (cond
-   ((number? point-or-points)
-    (append (list cmd point-or-points) (car coords)))
-   ((list? point-or-points)
-    (append (list cmd) point-or-points))
-   ((pair? point-or-points)
-    `(,cmd ,(car point-or-points) ,(cdr point-or-points)))
-   (else (ly:error (format #f "Wrong argument: ~a" point-or-points))))
+#(define (postscript-command cmd . points/point/coords)
+
+  (define (append-as-list x lst)
+   (cond ((number? x) (append lst (list x)))
+         ((list? x) (append lst x))
+         ((pair? x) (append lst (list (car x) (cdr x))))))
+
+  (fold
+   (lambda (coords/point prev)
+    (fold
+     append-as-list
+     prev coords/point))
+   (list cmd) points/point/coords)
 )
 
 #(define-syntax define-postscript-commands
   (syntax-rules ()
     ((_ name ...)
      (begin
-       (define (name point-or-points . coords)
-         (postscript-command 'name point-or-points coords))
+       (define (name . points/point/coords)
+         (postscript-command 'name points/point/coords))
        ...))))
 
 #(define-postscript-commands moveto rmoveto lineto rlineto curveto rcurveto closepath)
-#(assert-equal (moveto (point 2 3)) '(moveto 2 3))
-% #(assert-equal (moveto 1 2) `(moveto 1 2))
-#(assert-equal (moveto 1 2 3 4) '(moveto 1 2 3 4))
+#(assert-equal (moveto (point 1 2)) '(moveto 1 2))
+#(assert-equal (moveto (points 3 4)) '(moveto 3 4))
+#(assert-equal (moveto 5 6) `(moveto 5 6))
 % #(assert-error (moveto 1 2 3))
-#(assert-equal (rmoveto (points 1 2 3 4)) '(rmoveto 1 2 3 4))
-#(assert-equal (curveto (points 1 2 3 4 5 6 7 8)) '(curveto 1 2 3 4 5 6 7 8))
-% #(assert-error (curveto (points 1 2 3 4))) ???
+% #(assert-error (moveto 1 2 3 4))
+% #(assert-error (moveto (points 1 2 3 4)))
+% #(assert-error (moveto (curve 1 2 3 4 5 6))
+#(assert-equal (curveto (points 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto (curve 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto 1 2 3 4 5 6) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto 1 2 (point 3 4) (points 5 6)) '(curveto 1 2 3 4 5 6))
+% #(assert-error (curveto 1 2 3 4)) ???
+% #(assert-equal (curveto 1 2 3 4 5 6 7 8)))
 
 #(define (path . commands-or-pathargs)
   "Create a path from many make-path-stencil commands."
@@ -111,7 +113,17 @@
 
 
 
-
+%{
+%
+%   The code below is a legacy thing used in "styles" directory
+%   (which by far becomes more and more legacy).
+%
+%   It is left here until quill backend is finished.
+%   From then on, styles should be defined using quill backend:
+%
+%   \override NoteHead.stencil = #early:note-head::quill
+%
+% %}
 
 
 
