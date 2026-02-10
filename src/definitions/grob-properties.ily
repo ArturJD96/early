@@ -17,3 +17,6 @@
 
 
 #(set-object-property! 'early-quadrata-properties 'backend-type? alist?)
+
+
+#(set-object-property! 'early-quill 'backend-type? alist?)
