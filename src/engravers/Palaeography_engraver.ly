@@ -35,16 +35,17 @@ Args:
     regex-list (list of strings): list of strings to make regexp pattern for substituion.
     make-processor (lambda(str-new) -> lambda(match-obj)): function to be used as substitute's 'pre argument defining how str-new replaces str-old.
 "
-  (lambda (lyr str-new has-hyphen)
+  (lambda (lyr str-new is-last-syllable)
    (let* ((next-syl-dummy "qQqQq~QQqq")
-          (text (if has-hyphen (string-append lyr next-syl-dummy) lyr))
+          (text (if is-last-syllable lyr (string-append lyr next-syl-dummy)))
           (result (regexp-substitute/global #f
                    (make-regexp (apply string-append regex-list))
                    text 'pre (make-processor str-new) 'post
           )))
-    (if has-hyphen
+    (if is-last-syllable
+     result
      (substring result 0 (- (string-length result) (string-length next-syl-dummy)))
-     result)
+    )
 )))
 
 
@@ -143,6 +144,20 @@ Args:
 % %}
 
 #(define-public (early:Palaeography_engraver context)
+
+  (define (is-last-syllable grob-lyric)
+   "Finds out whether lyric is the last syllable in the word
+    by finding if HyphenEvent exists on it.
+    NOTE: is this the best way to do it?"
+   (any (lambda (a) (eq? 'HyphenEvent (ly:music-property a 'name)))
+        (ly:music-property
+         (ly:event-property
+          (ly:grob-property grob-lyric 'cause)
+          'music-cause)
+         'articulations)
+   )
+  )
+
   (make-engraver
    (acknowledgers
     ((lyric-syllable-interface engraver grob source)
@@ -150,18 +165,9 @@ Args:
             (font-config (ly:context-property context 'early-font-config))
             (allographs (ly:context-property context 'early-font-allographs))
             (ligatures (ly:context-property context 'early-font-ligatures)) ;; merge it?
-
+            ;; from grob.
             (text (ly:grob-property grob 'text))
             (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
-            ;; has hyphen?
-            (event (ly:grob-property grob 'cause))
-            (music (ly:event-property event 'music-cause))
-            (articulations (ly:music-property music 'articulations))
-            (has-hyphen (any (lambda (a)
-                              (eq? 'HyphenEvent (ly:music-property a 'name)))
-                             articulations))
-            (next-syllable-token "FoLlOwInG_SyLlAbLe_")
-
             (glyphs (assoc-ref early:supported-fonts font))
            )
 
@@ -186,29 +192,19 @@ Args:
            (set! substitution ((substitution-dummy "[~?~]") glyph)) ;; WRONGGG
           )
 
-          (set! text
-           (substitution
-            text
-            glyph
-            has-hyphen
-          ))
+          (set! text (substitution text glyph (is-last-syllable grob)))
 
-          ; (when has-hyphen
-          ;  (set! text (match:prefix (string-match "F?oLlOwInG_SyLlAbLe_" text))) ;; Because first letter can be "eaten out" (with current shitty implementation) we need to check without it.
-          ; )
         ))
         allographs)
       )
 
-      (when (assq-ref font-config 'ligatures) '())
+      (when (assq-ref font-config 'ligatures) '()) ;; Split between allographs and ligatures should be deprecated.
 
       ;; Finally, remove all the remaining asterisks
-      ;; (unless they are escaped by "\\".)
-      ;; ...... .. .. .. . . . . REALLLY????
-      (set! text
-       (regexp-substitute/global #f "\\*" text 'pre "" 'post)
-      )
+      ;; (unless they are escaped by "\\" <--- TO DO!)
+      (set! text (regexp-substitute/global #f "\\*" text 'pre "" 'post))
 
+      ;; Update the text for rendering.
       (ly:grob-set-property! grob 'text text)
      )
 ))))
