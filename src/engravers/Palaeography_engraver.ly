@@ -1,31 +1,105 @@
 \version "2.24.4"
 
+%{
+%
+%  TO DO: change "early:" to "palaeography:" !!!
+%
+%
+% %}
+
 % This should be replaced by the lilypond's ly:make-regex
 #(use-modules (ice-9 regex))
-% regexp-substitute/global port regexp target item…
-%
-% (regexp-substitute/global #f "[ \t]+"  "this   is   the text"
-%                           'pre "-" 'post)
-% ⇒ "this-is-the-text"
-%
-% ſ
-%
 
 %{
     Early Spelling Rules
-
-    Note: the '*' used for handling scribal exceptions
-    is already part of [:punct:] character class.
 %}
 
-#(define-public early:spelling-rules '(
+#(define (define-rule format-regex make-processor) '())
+
+#(define (define-substitution regex-list make-processor)
+"Define a substitution rule.
+
+In order to use substitution with palaeography engraver, you must define its factory:
+(define (substitution-example (str-old)
+ (define-substitution
+  (list '^inside' str-old 'regex$') ;; <-- your regex formula building blocks.
+  (lambda (str-new)
+   (lambda (match-obj)
+    (if (...here match-obj is being processed...)
+     str-new
+     str-old)
+  ))
+))
+
+Args:
+    regex-list (list of strings): list of strings to make regexp pattern for substituion.
+    make-processor (lambda(str-new) -> lambda(match-obj)): function to be used as substitute's 'pre argument defining how str-new replaces str-old.
+"
+  (lambda (lyr str-new has-hyphen)
+   (let* ((next-syl-dummy "qQqQq~QQqq")
+          (text (if has-hyphen (string-append lyr next-syl-dummy) lyr))
+          (result (regexp-substitute/global #f
+                   (make-regexp (apply string-append regex-list))
+                   text 'pre (make-processor str-new) 'post
+          )))
+    (if has-hyphen
+     (substring result 0 (- (string-length result) (string-length next-syl-dummy)))
+     result)
+)))
+
+
+%{
+%
+%   Substitution Factories.
+%
+% %}
+
+#(define (substitution-dummy str-old)
+  (define-substitution
+   '(,str-old)
+   (lambda (str-new)
+    (lambda (match-obj) str-old)
+   )
+))
+
+#(define (substitution-except-last str-old)
+"This procedure substitutes all 'str-old' except the last one in the word."
+  (define-substitution
+   `(,str-old "(\\B|\\b\\*([^[:alpha:]]+|$)|\\b\\[)")
+   (lambda (str-new)
+    (lambda (match-obj)
+     (let ((next (match:substring match-obj 1)))
+      (if (not (string=? "" next))
+       (if (char=? #\* (string-ref next 0))
+        (string-append str-new (substring next 1))
+        (string-append str-new next))
+       str-new
+      )
+   )))
+))
+
+
+%{
+%
+%   Description of rule modes:
+%
+%   "auto"
+%
+%   "indicated"
+%
+% %}
+#(define-public early:spelling-rules `(
   ;; (rule . auto (auto . indicated))
   (allographs . (
    (i-dotless . ("i" . "i*"))
    (i-helper-dot . ("[mnuwv]i[mnuwv]" . "[mnuwv]i[mnuwv]"))
    (m-final . ("m[[:punct:]]*(\\s|$)" . "m\\*")) ; tested.
    (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
-   (s-long . ("s\\B" . "s")) ; under testing.
+
+   (s-long . ((auto . ,(substitution-except-last "s"))
+              ;(always . ,(substitution "s"))
+              (indicated . ,(substitution-escaped "s")))) ;; adds \\*
+
    (v-as-u . ("v" . "v"))
   ))
   (ligatures .  (
@@ -43,7 +117,7 @@
    (m-final . "ɜ")
    (r-rotundum . "ꝛ")
    (s-long . "ſ")
-   (nasals . "~")⁹
+   (nasals . "~")
    (us-final . "⁹")
   ))
   ("Gothica Rotunda" . (
@@ -60,6 +134,12 @@
 ))
 
 
+%{
+%
+%   E N G R A V E R
+%
+% %}
+
 #(define-public (early:Palaeography_engraver context)
   (make-engraver
    (acknowledgers
@@ -67,7 +147,7 @@
      (let* ((unicode (ly:context-property context 'early-font-pure-unicode))
             (font-config (ly:context-property context 'early-font-config))
             (allographs (ly:context-property context 'early-font-allographs))
-            (ligatures (ly:context-property context 'early-font-ligatures))
+            (ligatures (ly:context-property context 'early-font-ligatures)) ;; merge it?
 
             (text (ly:grob-property grob 'text))
             (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
@@ -78,60 +158,56 @@
             (has-hyphen (any (lambda (a)
                               (eq? 'HyphenEvent (ly:music-property a 'name)))
                              articulations))
-            (next-syllable-token "FOLLOWING-SYLLABLE::")
+            (next-syllable-token "FoLlOwInG_SyLlAbLe_")
 
             (glyphs (assoc-ref early:supported-fonts font))
            )
 
-      ;; This needs to be refactor and made shallow.
+      ;; This needs to be refactored and made shallow.
 
       (when (assq-ref font-config 'allographs)
        (for-each
         (lambda (kv)
+         (assq-ref early:spelling-rules 'allographs)
          (let* ((spelling-rule (car kv))
-                (value (cdr kv))
+                (mode (cdr kv))
                 (allographs (assq-ref early:spelling-rules 'allographs))
-                (allograph (assq-ref allographs spelling-rule))
+                (substitution (assq-ref allographs spelling-rule)) ;; or 'ligatures'
                 (glyph (assq-ref glyphs spelling-rule))
                )
-          (cond
-           ((not allograph)
-            (ly:warning "🥀 Palaeography: unsupported allograph:")(display spelling-rule)(display " for font ")(display font)(newline))
-           ((not glyph)
-            (ly:warning "🥀 Palaeography: unsupported glyph:")(display spelling-rule)(display " for font ")(display font)(newline)
-            (set! glyph "???"))
-           (else
-            (let ((regex-auto (car allograph))
-                  (regex-indicated (cdr allograph)))
 
-             (set! text
-              (regexp-substitute/global #f regex-auto (if has-hyphen (string-append text next-syllable-token) text) 'pre
-               (lambda (m)
-                (let* ((str (match:substring m))
-                       (exception-symbol "\\*")
-                       (asterisk-match (string-match exception-symbol str))
-                      )
-                (if asterisk-match
-                 (string-append (match:prefix asterisk-match) (match:suffix asterisk-match))
-                 (string-append glyph (match:suffix (string-match "\\w*" str))))
-               ))
-               'post)
-             )
-
-             (when has-hyphen
-              (set! text
-               (match:prefix (string-match next-syllable-token text))))
-
-            )
-           )
+          (when (not glyph)
+           (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" spelling-rule font))
+           (set! glyph "[~?~]")
           )
+
+          (when (not substitution)
+           (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" spelling-rule font))
+           (set! substitution ((substitution-dummy "[~?~]") glyph)) ;; WRONGGG
+          )
+
+          (set! text
+           (substitution
+            text
+            glyph
+            has-hyphen
+          ))
+
+          ; (when has-hyphen
+          ;  (set! text (match:prefix (string-match "F?oLlOwInG_SyLlAbLe_" text))) ;; Because first letter can be "eaten out" (with current shitty implementation) we need to check without it.
+          ; )
         ))
-
         allographs)
-
       )
 
       (when (assq-ref font-config 'ligatures) '())
+
+      ;; Finally, remove all the remaining asterisks
+      ;; (unless they are escaped by "\\".)
+      ;; ...... .. .. .. . . . . REALLLY????
+      (set! text
+       (regexp-substitute/global #f "\\*" text 'pre "" 'post)
+      )
 
       (ly:grob-set-property! grob 'text text)
      )
