@@ -1,4 +1,155 @@
-\version "2.24.3"
+\version "2.24.4"
+\include "assert.ly"
+
+%
+% Code begins.
+%
+
+#(define (point x y)
+  "Makes a 2d point."
+  `(,x . ,y))
+#(assert-equal (point 2/5 1.2) '(2/5 . 1.2))
+
+#(define (points . coords)
+  "Makes a list of coordinates used as arguments
+   for make-path-stencil's commands (e.g. moveto).
+   Note: 'coord' is a list of consecutive x and y values."
+  ; ... additional type checks should go here.
+  (when (odd? (length coords))
+   (ly:error "Number of point coordinates must be even."))
+  coords)
+
+#(define (points:list points)
+  "Returns points as list of lists (used e.g. in
+   make-connected-path-stencil's pointlist)."
+  (if (null? points) '()
+   (cons (list (car points) (cadr points))
+         (points:list (cddr points)))))
+#(define (points:pairs points)
+  "Returns points as list of lists (used e.g. in
+  make-connected-path-stencil's pointlist)."
+  (if (null? points) '()
+   (cons (cons (car points) (cadr points))
+         (points:pairs (cddr points)))))
+#(assert-equal (points 1 2 3 4) '(1 2 3 4))
+% #(assert-error (points 1 2 3))
+#(assert-equal (points:list (points 1 2 3 4 5 6))
+               '((1 2)(3 4)(5 6)))
+#(assert-equal (points:pairs (points 1 2 3 4 5 6))
+               '((1 . 2)(3 . 4)(5 . 6)))
+
+#(define (curve x1 y1 x2 y2 x3 y3)
+  "Returns a list of coordinates for
+   a lilypond-supported bezier-curve.
+   Note: the first point of the curve
+   will be either (0 . 0) or the last point
+   provided within the path."
+  (list x1 y1 x2 y2 x3 y3))
+#(assert-equal (curve 1 2 3 4 5 6) '(1 2 3 4 5 6))
+% #(assert-error (curve 1 2 3 4))
+
+%% Here I recreate postscript-like commands
+%% used for the make-path-stencil path.
+#(define (postscript-command cmd . points/point/coords)
+
+  (define (append-as-list x lst)
+   (cond ((number? x) (append lst (list x)))
+         ((list? x) (append lst x))
+         ((pair? x) (append lst (list (car x) (cdr x))))))
+
+  (fold
+   (lambda (coords/point prev)
+    (fold
+     append-as-list
+     prev coords/point))
+   (list cmd) points/point/coords)
+)
+
+#(define-syntax define-postscript-commands
+  (syntax-rules ()
+    ((_ name ...)
+     (begin
+       (define (name . points/point/coords)
+         (postscript-command 'name points/point/coords))
+       ...))))
+
+#(define-postscript-commands moveto rmoveto lineto rlineto curveto rcurveto closepath)
+#(assert-equal (moveto (point 1 2)) '(moveto 1 2))
+#(assert-equal (moveto (points 3 4)) '(moveto 3 4))
+#(assert-equal (moveto 5 6) `(moveto 5 6))
+% #(assert-error (moveto 1 2 3))
+% #(assert-error (moveto 1 2 3 4))
+% #(assert-error (moveto (points 1 2 3 4)))
+% #(assert-error (moveto (curve 1 2 3 4 5 6))
+#(assert-equal (curveto (points 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto (curve 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto 1 2 3 4 5 6) '(curveto 1 2 3 4 5 6))
+#(assert-equal (curveto 1 2 (point 3 4) (points 5 6)) '(curveto 1 2 3 4 5 6))
+% #(assert-error (curveto 1 2 3 4)) ???
+% #(assert-equal (curveto 1 2 3 4 5 6 7 8)))
+
+#(define (path . commands-or-pathargs)
+  "Create a path from many make-path-stencil commands."
+  (fold
+   (lambda (cmd-or-parg prev)
+    (if (list? cmd-or-parg)
+     (append prev cmd-or-parg) ;; command, e.g. (moveto 1 2)
+     (append prev (list cmd-or-parg)))  ;; patharg, e.g. moveto or '1'
+   )
+   '() commands-or-pathargs)
+)
+#(assert-equal (path 'moveto 1 2 (lineto 3 4) (curveto 5 6 7 8))
+               '(moveto 1 2 lineto 3 4 curveto 5 6 7 8))
+
+
+% #(make-path-stencil
+%   (path 'moveto 1 2); path
+%   1 ; thickness
+%   1 1; x,y-scale
+%   #t ; fill
+%   ; #:line-cap-style line-cap-style
+%   ; #:line-join-style line-join-style
+% )
+
+
+
+%{
+%
+%   The code below is a legacy thing used in "styles" directory
+%   (which by far becomes more and more legacy).
+%
+%   It is left here until quill backend is finished.
+%   From then on, styles should be defined using quill backend:
+%
+%   \override NoteHead.stencil = #early:note-head::quill
+%
+% %}
+
+
+
+
+
+
+
+#(define (point-bezier x1 y1 x2 y2 x3 y3)
+  (list ;; place of curve's starting point (x0 y0)
+        ;; takes the point that preceeds this object.
+        (point x1 y1)
+        (point x2 y2)
+        (point x3 y3))
+)
+
+
+
+
+
+
+
+
+
+
+
+
 
 #(define (bezier-list->points bezier-list)
   (let ((x0 (list-ref bezier-list 0))

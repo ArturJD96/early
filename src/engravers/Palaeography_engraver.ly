@@ -96,9 +96,11 @@ Args:
    (m-final . ("m[[:punct:]]*(\\s|$)" . "m\\*")) ; tested.
    (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
 
-   (s-long . ((auto . ,(substitution-except-last "s"))
-              ;(always . ,(substitution "s"))
-              (indicated . ,(substitution-escaped "s")))) ;; adds \\*
+   (s-long . ,(substitution-except-last "s"))
+
+   ; (s-long . ((auto . ,(substitution-except-last "s"))
+   ;            ;(always . ,(substitution "s"))
+   ;            (indicated . ,(substitution-escaped "s")))) ;; adds \\*
 
    (v-as-u . ("v" . "v"))
   ))
@@ -162,8 +164,6 @@ Args:
 
             (glyphs (assoc-ref early:supported-fonts font))
            )
-
-      ;; This needs to be refactored and made shallow.
 
       (when (assq-ref font-config 'allographs)
        (for-each
