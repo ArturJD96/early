@@ -36,12 +36,13 @@ Args:
     make-processor (lambda(str-new) -> lambda(match-obj)): function to be used as substitute's 'pre argument defining how str-new replaces str-old.
 "
   (lambda (lyr str-new is-last-syllable)
-   (let* ((next-syl-dummy "qQqQq~QQqq")
+   (let* ((next-syl-dummy "qQqQqQQqq")
           (text (if is-last-syllable lyr (string-append lyr next-syl-dummy)))
           (result (regexp-substitute/global #f
                    (make-regexp (apply string-append regex-list))
                    text 'pre (make-processor str-new) 'post
           )))
+
     (if is-last-syllable
      result
      (substring result 0 (- (string-length result) (string-length next-syl-dummy)))
@@ -97,11 +98,11 @@ Args:
    (m-final . ("m[[:punct:]]*(\\s|$)" . "m\\*")) ; tested.
    (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
 
-   (s-long . ,(substitution-except-last "s"))
-
-   ; (s-long . ((auto . ,(substitution-except-last "s"))
-   ;            ;(always . ,(substitution "s"))
-   ;            (indicated . ,(substitution-escaped "s")))) ;; adds \\*
+   ; (s-long . ,(substitution-except-last "s"))
+   ;; IMPLEMENT THIS THOUGH!
+   (s-long . ((auto . ,(substitution-except-last "s")) ))
+              ; (always . ,(substitution "s"))
+              ; (indicated . ,(substitution-escaped "s")))) ;; adds \\*
 
    (v-as-u . ("v" . "v"))
   ))
@@ -149,12 +150,14 @@ Args:
    "Finds out whether lyric is the last syllable in the word
     by finding if HyphenEvent exists on it.
     NOTE: is this the best way to do it?"
-   (any (lambda (a) (eq? 'HyphenEvent (ly:music-property a 'name)))
+   (not
+    (any (lambda (a) (eq? 'HyphenEvent (ly:music-property a 'name)))
         (ly:music-property
          (ly:event-property
           (ly:grob-property grob-lyric 'cause)
           'music-cause)
          'articulations)
+    )
    )
   )
 
@@ -171,14 +174,19 @@ Args:
             (glyphs (assoc-ref early:supported-fonts font))
            )
 
+           ;; early:spelling-rules
+           ; (s-long . ,(substitution-except-last "s"))
+           ;; IMPLEMENT THIS THOUGH!
+           ; (s-long . ((auto . ,(substitution-except-last "s")) ))
+
+
       (when (assq-ref font-config 'allographs)
        (for-each
         (lambda (kv)
-         (assq-ref early:spelling-rules 'allographs)
          (let* ((spelling-rule (car kv))
-                (mode (cdr kv))
+                (rule-mode (cdr kv))
                 (allographs (assq-ref early:spelling-rules 'allographs))
-                (substitution (assq-ref allographs spelling-rule)) ;; or 'ligatures'
+                (substitution (assq-ref (assq-ref allographs spelling-rule) rule-mode)) ;; or 'ligatures'
                 (glyph (assq-ref glyphs spelling-rule))
                )
 
