@@ -35,19 +35,21 @@ Args:
     regex-list (list of strings): list of strings to make regexp pattern for substituion.
     make-processor (lambda(str-new) -> lambda(match-obj)): function to be used as substitute's 'pre argument defining how str-new replaces str-old.
 "
-  (lambda (lyr str-new is-last-syllable)
-   (let* ((next-syl-dummy "qQqQqQQqq")
-          (text (if is-last-syllable lyr (string-append lyr next-syl-dummy)))
-          (result (regexp-substitute/global #f
-                   (make-regexp (apply string-append regex-list))
-                   text 'pre (make-processor str-new) 'post
-          )))
-
-    (if is-last-syllable
-     result
-     (substring result 0 (- (string-length result) (string-length next-syl-dummy)))
-    )
-)))
+  (let ((next-syl-dummy "qQqQqQQqq")
+        (regexp-pattern (make-regexp (apply string-append regex-list)))
+       )
+   (lambda (lyr str-new is-last-syllable)
+    (let ((result (regexp-substitute/global #f
+                    regexp-pattern
+                    (if is-last-syllable lyr (string-append lyr next-syl-dummy))
+                    'pre (make-processor str-new)
+                    'post))
+         )
+     (if is-last-syllable
+      result
+      (substring result 0 (- (string-length result) (string-length next-syl-dummy)))
+     )
+))))
 
 
 %{
