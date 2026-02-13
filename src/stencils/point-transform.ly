@@ -1,14 +1,40 @@
 \version "2.24.4"
-\include "assert.ly"
+\include "../testing.ily"
 
+%{
 %
-% Code begins.
+%   Point and Curve.
 %
+%   Basic postscript coordinate units.
+%
+% %}
 
 #(define (point x y)
   "Makes a 2d point."
   `(,x . ,y))
-#(assert-equal (point 2/5 1.2) '(2/5 . 1.2))
+
+#(testing "point"
+  (test-equal '(2/5 . 1.2) (point 2/5 1.2) )
+)
+
+#(define (curve x1 y1 x2 y2 x3 y3)
+  "Returns a list of coordinates for
+   a lilypond-supported bezier-curve.
+   Note: the first point of the curve
+   will be either (0 . 0) or the last point
+   provided within the path."
+  (list x1 y1 x2 y2 x3 y3))
+
+#(testing "curve"
+  (test-equal '(1 2 3 4 5 6) (curve 1 2 3 4 5 6) )
+  ; (test-error (curve 1 2 3 4))
+)
+
+%{
+%
+%   Points – a list of postscript coordinates (points & curves).
+%
+% %}
 
 #(define (points . coords)
   "Makes a list of coordinates used as arguments
@@ -31,22 +57,14 @@
   (if (null? points) '()
    (cons (cons (car points) (cadr points))
          (points:pairs (cddr points)))))
-#(assert-equal (points 1 2 3 4) '(1 2 3 4))
-% #(assert-error (points 1 2 3))
-#(assert-equal (points:list (points 1 2 3 4 5 6))
-               '((1 2)(3 4)(5 6)))
-#(assert-equal (points:pairs (points 1 2 3 4 5 6))
-               '((1 . 2)(3 . 4)(5 . 6)))
 
-#(define (curve x1 y1 x2 y2 x3 y3)
-  "Returns a list of coordinates for
-   a lilypond-supported bezier-curve.
-   Note: the first point of the curve
-   will be either (0 . 0) or the last point
-   provided within the path."
-  (list x1 y1 x2 y2 x3 y3))
-#(assert-equal (curve 1 2 3 4 5 6) '(1 2 3 4 5 6))
-% #(assert-error (curve 1 2 3 4))
+#(testing "points:list"
+  (test-equal '(1 2 3 4) (points 1 2 3 4))
+  ; (test-error (points 1 2 3)) TO DO !!!!
+  (test-equal '((1 2)(3 4)(5 6)) (points:list (points 1 2 3 4 5 6)) )
+  (test-equal '((1 . 2)(3 . 4)(5 . 6)) (points:pairs (points 1 2 3 4 5 6)))
+)
+
 
 %% Here I recreate postscript-like commands
 %% used for the make-path-stencil path.
@@ -74,19 +92,26 @@
        ...))))
 
 #(define-postscript-commands moveto rmoveto lineto rlineto curveto rcurveto closepath)
-#(assert-equal (moveto (point 1 2)) '(moveto 1 2))
-#(assert-equal (moveto (points 3 4)) '(moveto 3 4))
-#(assert-equal (moveto 5 6) `(moveto 5 6))
-% #(assert-error (moveto 1 2 3))
-% #(assert-error (moveto 1 2 3 4))
-% #(assert-error (moveto (points 1 2 3 4)))
-% #(assert-error (moveto (curve 1 2 3 4 5 6))
-#(assert-equal (curveto (points 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
-#(assert-equal (curveto (curve 1 2 3 4 5 6)) '(curveto 1 2 3 4 5 6))
-#(assert-equal (curveto 1 2 3 4 5 6) '(curveto 1 2 3 4 5 6))
-#(assert-equal (curveto 1 2 (point 3 4) (points 5 6)) '(curveto 1 2 3 4 5 6))
-% #(assert-error (curveto 1 2 3 4)) ???
-% #(assert-equal (curveto 1 2 3 4 5 6 7 8)))
+
+#(testing "postscript commands"
+  (test-group "moveto"
+   (test-equal '(moveto 1 2) (moveto (point 1 2)))
+   (test-equal '(moveto 3 4) (moveto (points 3 4)))
+   (test-equal `(moveto 5 6) (moveto 5 6))
+   ; (test-error (moveto 1 2 3))
+   ; (test-error (moveto 1 2 3 4))
+   ; (test-error (moveto (points 1 2 3 4)))
+   ; (test-error (moveto (curve 1 2 3 4 5 6))
+  )
+  (test-group "curveto"
+   (test-equal '(curveto 1 2 3 4 5 6) (curveto (points 1 2 3 4 5 6)) )
+   (test-equal '(curveto 1 2 3 4 5 6) (curveto (curve 1 2 3 4 5 6)) )
+   (test-equal '(curveto 1 2 3 4 5 6) (curveto 1 2 3 4 5 6) )
+   (test-equal '(curveto 1 2 3 4 5 6) (curveto 1 2 (point 3 4) (points 5 6)) )
+   ; #(test-error (curveto 1 2 3 4)) ???
+   ; #(test-equal (curveto 1 2 3 4 5 6 7 8)))
+  )
+)
 
 #(define (path . commands-or-pathargs)
   "Create a path from many make-path-stencil commands."
@@ -98,8 +123,14 @@
    )
    '() commands-or-pathargs)
 )
-#(assert-equal (path 'moveto 1 2 (lineto 3 4) (curveto 5 6 7 8))
-               '(moveto 1 2 lineto 3 4 curveto 5 6 7 8))
+
+#(testing "postscript path"
+ (test-equal '(moveto 1 2 lineto 3 4 curveto 5 6 7 8)
+             (path 'moveto 1 2
+                   (lineto 3 4)
+                   (curveto 5 6 7 8)))
+)
+
 
 
 % #(make-path-stencil

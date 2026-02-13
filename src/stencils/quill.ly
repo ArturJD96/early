@@ -1,5 +1,4 @@
 \version "2.24.4"
-\include "assert.ly"
 
 %{
 % Define different custom quills.

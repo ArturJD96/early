@@ -1,5 +1,14 @@
 \version "2.24.3"
 
+%{
+%
+%   This file is obsolete, thus I don't touch it now.
+%
+%   I should replace "assert.ly" library with "testing.ily".
+%   At this point, "assert.ly" lib is deleted and I use "testing.ily".
+%
+% %%}
+
 \include "../early_backend/early-styles.ly"
 
 #(define (assert-equals name expr expected)
