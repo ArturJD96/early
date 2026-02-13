@@ -205,8 +205,9 @@ Args:
    (m-final . "ɜ")
    (r-rotundum . "ꝛ")
    (s-long . "ſ")
-   (nasals . "~")
+   (nasals . "~") ;; adding *above* the vowel... OR better represent as dictionary?
    (us-final . "⁹")
+   (abbreviation . "~") ;; added to the middle letter of a custom abbreviation..? A hook?
   ))
   ("Gothica Rotunda" . (
    (i-dotless . "ı")
@@ -215,7 +216,7 @@ Args:
    (r-rotundum . "")
    (s-long . "ſ")
    (v-as-u . "u")
-   (nasals . "~") ; "append to letter" hook?
+   (nasals . "~") ; "append to letter" hook? OR a dictionary?
    (us-final . "")
   ))
 
