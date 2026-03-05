@@ -1,5 +1,5 @@
 \version "2.24.4"
-\include "../early/src/testing.ily"
+\include "../testing.ily"
 #(use-modules (ice-9 textual-ports)
               ;(sxml ssax)
               (sxml xpath)
