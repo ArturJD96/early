@@ -69,7 +69,9 @@
                    (λ ()
                      (if pretty?
                          (pretty-print val #:per-line-prefix "             ")
-                         (display val)))))))
+                         (if (ly:music? val)
+                          (display-scheme-music val)
+                          (display val))))))))
       (when val
         (format #t "~a: ~a~%" prop val))))
 
