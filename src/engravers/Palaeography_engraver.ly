@@ -1,6 +1,7 @@
 \version "2.24.4"
 
 \include "../testing.ily"
+#(define palaeography:supress-warnings #t)
 
 %{
 %
@@ -70,7 +71,7 @@ Args:
 
 #(define (substitution-dummy str-old)
   (define-substitution
-   '(,str-old)
+   `(,str-old)
    (lambda (str-new)
     (lambda (match-obj) str-old)
    )
@@ -273,13 +274,15 @@ Args:
                )
 
           (when (not glyph)
-           (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" spelling-rule font))
+           (unless palaeography:supress-warnings
+            (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" spelling-rule font)))
            (set! glyph "[~?~]")
           )
 
           (when (not substitution)
-           (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" spelling-rule font))
-           (set! substitution ((substitution-dummy "[~?~]") glyph)) ;; WRONGGG
+           (unless palaeography:supress-warnings
+            (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" spelling-rule font)))
+           (set! substitution (substitution-dummy glyph))
           )
 
           (set! text (substitution text glyph (is-last-syllable grob)))
