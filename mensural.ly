@@ -85,6 +85,7 @@
          (proportio (props:get 'proportio))
          (proportion (if (fraction? proportio) proportio (/ 1 proportio)))
          (default-ternary (or (props:get 'default-ternary) is-rest))
+         (hollow (props:get 'hollow))
 
          (punctum-perfectionis (props:get 'punctum-perfectionis))
 
@@ -111,6 +112,9 @@
        (set! compress-factor (* compress-factor mod))))
       perfection)
 
+    (when hollow
+     (set! compress-factor (/ compress-factor 2)))
+
     (ly:duration-compress dur compress-factor)
 
   ))
@@ -132,13 +136,15 @@
 mensura =
 #(define-music-function (signum) (number-or-string?)
   (let* ((mensuration-properties (assoc-ref all-mensurations signum))
-         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
+         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy))
+         (num (car time-signature-dummy))
+         (den (cdr time-signature-dummy)))
     (unless mensuration-properties
-     (display signum)
-     (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration procedure."))
+     (ly:error "Unrecognized signum of mensuration: ~A. You can define your own mensuration using add-mensuration procedure." signum))
     #{
         #(mensuration mensuration-properties)
-        \time #time-signature-dummy
+        #(time '() time-signature-dummy)
+        % \time #'() #time-signature-dummy
     #}))
 
 tempus =
@@ -315,10 +321,36 @@ colorMinor =
 
 planus = \mensura "X"
 
-hollow = % better use context?
-#(define-music-function (note) (ly:music?)
-  (early:mensura-set-property! note 'hollow #t)
-  note)
+halveBase =
+#(define-music-function () ()
+  (make-music
+   'early:MensuraEvent
+   'mensura-properties
+   '((hollow . #t))))
+
+unhalveBase =
+#(define-music-function () ()
+  (make-music
+   'early:MensuraEvent
+   'mensura-properties
+   '((hollow . #f))))
+
+halve = {
+    \halveBase
+}
+unhalve = {
+    \unhalveBase
+}
+
+%% Very dummy implementations.
+color =
+#(define-music-function (bool) (boolean?)
+  (if bool #{ \blackmensural #} #{ \whitemensural #}))
+
+% hollow = % better use context?
+% #(define-music-function (note) (ly:music?)
+%   (early:mensura-set-property! note 'hollow #t)
+%   note)
 
 % maxima = #(ly:make-duration -3 0 1/1)
 

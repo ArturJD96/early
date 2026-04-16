@@ -94,7 +94,7 @@
             early-font-allographs = #'(
              (i-dotless . auto)
              (i-helper-dot . never)
-             (m-final . indicated)
+             (m-final . auto)
              (r-rotundum . auto)
              (s-long . auto)
              (v-as-u . auto)

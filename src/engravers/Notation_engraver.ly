@@ -18,11 +18,20 @@ as found in stem-engraver.cc."
 ))
 
 
-#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color colored)
+#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color colored halved)
 
   (when colored
    (set! implicit-color +inf.0)
    (set! notation 'blackmensural)) ;; what about hollow whitemensural?
+
+  (when halved
+   (case notation
+    ((whitemensural)
+     (set! implicit-color -inf.0)
+     (set! notation 'blackmensural)) ;; what about hollow whitemensural?
+    ((blackmensural)
+     (set! implicit-color +inf.0)
+     (set! notation 'whitehollow))))
 
   (case notation
 
@@ -41,9 +50,7 @@ as found in stem-engraver.cc."
            (ly:grob-set-property! notehead 'style 'petrucci)
            (if (> dur-log 0)
             (ly:grob-set-property! notehead 'duration-log 1)
-            (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
-   )))
-
+            (ly:grob-set-property! notehead 'duration-log (1- dur-log)))) )))
 )
 
 
@@ -66,6 +73,7 @@ There are all delegated to early:GROB::print functions."
        (dummy '()))
   (make-engraver
    (acknowledgers
+
     ((note-head-interface engraver grob source)
      (let* (;; context properties
             (notation (ly:context-property context 'notation))
@@ -108,7 +116,7 @@ There are all delegated to early:GROB::print functions."
                     ((blackpetrucci) adjust-petrucci-notehead!)
                     (else (ly:error "Note head style (WHICH???) duration-log adjustment not yet implemented.")
                           adjust-petrucci-notehead!))
-        (list notation grob dur-log implicit-color colored))
+        (list notation grob dur-log implicit-color colored hollow))
       )
 
     )) ;; end of notehead-interface
