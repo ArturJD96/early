@@ -15,6 +15,13 @@
 %
 % %}
 
+#(define (early:testing-run bool)
+  (test-runner-factory
+   (if bool
+    (lambda () (early:test-runner)) ;; Defined below.
+    (lambda () (test-runner-null)))))
+
+#(early:testing-run #f)
 
 %{
 %
@@ -123,8 +130,6 @@ standard output port."
 %{
 % Setting the test runner to our early's.
 % %}
-#(test-runner-factory
-  (lambda () (early:test-runner)))
 
 #(define-syntax-rule (testing name body ...)
   (begin
