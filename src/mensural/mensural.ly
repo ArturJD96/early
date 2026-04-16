@@ -1,6 +1,10 @@
 \version "2.24.4"
 \include "./../definitions/events.ily"
-\include "./mensur-event.ily"
+\include "./mensur.ily"
+\include "./settings.ly"
+\include "./signa.ily"
+\include "./puncta.ly"
+
 #(use-modules (ice-9 copy-tree))
 
 %%
@@ -14,9 +18,12 @@
 %% 2) it iterates from parents to children,
 %%
 #(define (for-some-mensural-music stop? music mensur-context)
-  "Walk through @var{music}, process all elements calling @var{stop?}
-   and only recurse if this returns @code{#f}.
-   AJD: Based on @code{for-some-music} from 'music-functions.scm'."
+  "Walk through @var{music}, modifying its elements according to
+  mensur-context. Early mensur-related events can modify this context.
+
+  Based on @code{for-some-music} from 'music-functions.scm':
+  \"walk through @var{music}, process all elements calling @var{stop?}
+  and only recurse if this returns @code{#f}.\""
   (define (worker mensur-context)
    (lambda (music)
     (when (not (stop? music mensur-context))
@@ -38,23 +45,20 @@ mensural = #(define-music-function (music) (ly:music?)
    and recalculate all duration values."
 
   (for-some-mensural-music
-   (lambda (m mensur-context)
+   (lambda (m mensur)
     (cond
       ; ((music-is-of-type? m 'sequential-music)
       ;  (...)) ;; go further? Do not mensurate if indicated? Turn into modern notation?
      ((music-is-of-type? m 'early:mensur-event)
       (case (ly:music-property m 'name) ;; update the mensural context
-       ((early:MensurEvent)
-        (mensur-set! mensur-context m))
-       ((early:MensurSetting)
-        (mensur-setting-set! mensur-context m))))
+       ((early:MensurEvent) (mensur:override! mensur m))
+       ((early:MensurSetting) (mensur:update! mensur m))))
      ((music-is-of-type? m 'rhythmic-event)
-      (early:mensurate-event m mensur-context)) ;; append mensural properties, store old duration and modify duration.
+      (mensur:mensurate-event! mensur m)) ;; append mensural properties, store old duration and modify duration.
      (else #f)
    ))
    music
-   (early:mensur-context (early:mensur '()) ;; Related to mensur.
-                         (early:mensur-settings '() '())) ;; Related to internal LilyPond and Early helpers.
+   (mensur:default)
   )
   music
 
@@ -65,12 +69,15 @@ mensura = #(define-music-function (signum) (symbol?)
 
  "Set the mensura of the music."
 
- (let ((mensur (early:signum->mensur signum)))
-   (make-music
-    'early:MensurEvent
-    'mensura-type 'signum ;; or: color, hollow, proportion, divisio (Italian, see MEI)
-    'signum signum
-    'complex-subdivisions (mensur:complex-subdivisions mensur)
-    'proportio (mensur:proportio mensur)))
+ (early:signum->mensur-event signum)
 
-)
+ ;; OLD CODE:
+ ; (let ((mensur (early:signum->mensur-event signum)))
+ ;   (make-music
+ ;    'early:MensurEvent
+ ;    'mensura-type 'signum ;; or: color, hollow, proportion, divisio (Italian, see MEI)
+ ;    'signum signum
+ ;    'relationships (mensur:relationships mensur)
+ ;    'proportio (mensur:proportio mensur)))
+
+ )

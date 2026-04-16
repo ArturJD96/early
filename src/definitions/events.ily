@@ -1,5 +1,8 @@
 \version "2.24.3"
 
+% TO DO !!!
+% Eliminate 'early:' suffix – it causes segmentation troubles. Use 'EarlyThingyEvent'.
+
 % Event properties
 
 #(define (define-event! type properties)
@@ -39,6 +42,9 @@
 
   ;; ... New, mei-inspired!
   (define-event-class 'early:mensur-event 'early-event)
+  (define-event-class 'early-punctum-event 'early-event)
+  (define-event-class 'early-complexity-event 'early-event)
+
   (define-event! 'early:MensurEvent
    '((description . "An event created when setting a new mensuration. Used in music processed with '\\mensural'.")
      ;(iterator-ctor . ,ly:sequential-iterator::constructor)
@@ -62,6 +68,14 @@
      ;(iterator-ctor . ,ly:sequential-iterator::constructor)
      ;(elements-callback . ,make-mensura-event) ;; make-time-signature-set
      (types . (early:mensur-event time-signature-music StreamEvent)))
+  )
+  (define-event! 'EarlyPunctumEvent
+   '((description . "A point whose semantic function and layout differs vastly among early music editions.")
+     (types . (early-punctum-event post-event event StreamEvent)))
+  )
+  (define-event! 'EarlyComplexityEvent
+   '((description . "Note is being made complex.")
+     (types . (early-complexity-event post-event event StreamEvent)))
   )
   ; (define-event! 'early:MensurEvent
   ;  '((description . "An event created when setting a new mensuration. Used in music processed with '\\mensural'.")
