@@ -76,7 +76,7 @@
 
         \override TimeSignature.style = #'mensural
         \override LedgerLineSpanner.stencil = ##f
-        \override StaffSymbol.stencil = #(early-staff jagged-line)
+        \override StaffSymbol.stencil = #(early-staff delicate-jagged-line)
 
     }
 
