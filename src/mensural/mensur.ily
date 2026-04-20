@@ -55,37 +55,9 @@
   (quality %mensur-event-quality:quality)
   (reason  %mensur-event-quality:reason))
 
-% TO DO: consult a good source on definitions of those terms.
-#(define mensur:quality-reasons `(
-  ;; Usual case.
-  (simple-mensur .
-   ((description . "Mensura is duplex so complex mensuration does not apply")
-    (event . rhythmic-event)
-    (qualities . (simple))))
-  ;; Reasons for complex.
-  (rest .
-   ((description . "Rest in mensural music is compulsory complex in complex meters.")
-    (event . rest-event)
-    (qualities . (complex))))
-  (position .
-   ((description . "Note mensuration is deduced from position.")
-    (event . note-event)
-    (qualities . (simple complex partial altera))))
-  (punctum-perfectionis .
-   ((descritpion . "In complex mensura, note is complex (perfect) because it followed by an immediate dot.")
-    (event . note-event)
-    (qualities . (complex))))
-  ;; For documentation purposes.
-  (undocumented .
-   ((description . "The reason for mensuration is not explicitly provided")
-    (event . rhythmic-event)
-    (qualities . (complex simple partial altera))))
-  (exception .
-   ((description . "A note defies mensural rules")
-    (event . rhythmic-event)
-    (qualities . (complex simple partial altera))))
+% TO DO: Using: event's mensur:make-quality
 
-))
+
 
 %{
 %       All the fields above need to be registered in mensur:fields
@@ -221,8 +193,8 @@
 #(define-public mensur:proportio! %mensur-context:proportio!)
 
 %% Helpers for rhythmic-event mensural quality.
-#(define-public mensur:quality %mensur-event-quality:quality)
-#(define-public mensur:reason %mensur-event-quality:reason)
+% #(define-public mensur:quality %mensur-event-quality:quality)
+% #(define-public mensur:reason %mensur-event-quality:reason)
 
 #(define-public (mensur:subdivisions context)
   "Return the alist ((dur-log . subdivision-value))."
@@ -374,25 +346,11 @@
   (test-equal "Leaves settings intact." #t (mensur:implicit c 0))
 )
 
+% TO DO: replace with native 'event-has-articulation?' method.
 #(define (find-post-event music event)
   "Find post-event attached to music's articulations."
   (find (lambda (a) (music-is-of-type? a event))
                (ly:music-property music 'articulations)))
-
-#(define (%mensur:complexity-event-apply! complexity rhythmic-event)
-    (let ((type (ly:music-property complexity 'type))
-          (reason (ly:music-property complexity 'reason))
-          (quality (ly:music-property rhythmic-event 'mensur:quality)))
-     (case type
-      ((complex)
-       (mensur:quality-set-complex! rhythmic-event reason))
-      ((simple)
-       (mensur:quality-set-simple! rhythmic-event reason))
-      ((altera)
-       (mensur:quality-set-altera! rhythmic-event reason))
-      ((partial)
-       (mensur:quality-set-partial! rhythmic-event reason (ly:music-property complexity 'fraction))))
-))
 
 
 #(define %mensur:puncta `(
@@ -506,55 +464,25 @@
     ((null? quality) 1)
     ((eq? reason 'punctum-perfectionis) 1)
     (else
-     (let* ((quality (mensur:quality quality))
+     (let* ((quality-type (mensur:quality quality))
             (subdivisions (mensur:subdivisions context))
             (is-complex (mensur:complex? context rhythmic-event))
             (init-factor (if is-complex (complex-factor context dur-log) 1))
             (factor (fold accum-factor init-factor subdivisions))
            )
-
-      (case quality
+      (case quality-type ;; TO DO: move it to definitiions.
        ((simple) factor)
        ((complex) factor)
        ((altera) (* 2 factor))
        ((partial)
-        (let* ((partial-factor (ly:music-property rhythmic-event 'mensur:partial-factor))
-               (num (car partial-factor))
-               (den (cdr partial-factor)))
+        (let* ((fraction (mensur:fraction quality))
+               (num (car fraction))
+               (den (cdr fraction)))
          (* factor (/ num den))))
        (else (ly:error "Unimplemented mensur quality: \"~a\"" quality)))
 
 )))))
 
-
-#(define (mensur:event-quality-set! rhythmic-event quality reason)
-
-  (let ((reason-data (assq-ref mensur:quality-reasons reason)))
-
-   (unless reason-data
-    (ly:error "Unrecognized mensur quality reason: \"~a\"." reason))
-   (unless (memq quality (assq-ref reason-data 'qualities))
-    (ly:error "\"~a\" is not a valid mensural quality reason for a \"~a\" quality. Valid reasons are: ~a." reason quality (assq-ref reason-data 'qualities)))
-   (unless (music-is-of-type? rhythmic-event (assq-ref reason-data 'event))
-    (ly:error "Event cannot have a mensur quality ~a of reason ~a." quality reason))
-
-   (ly:music-set-property! rhythmic-event 'mensur:quality (mensur:event-quality quality reason))))
-
-
-#(define-public (mensur:quality-set-simple! rhythmic-event reason)
-  (mensur:event-quality-set! rhythmic-event 'simple reason))
-
-#(define-public (mensur:quality-set-complex! rhythmic-event reason)
-  (mensur:event-quality-set! rhythmic-event 'complex reason))
-
-#(define-public (mensur:quality-set-altera! note-event reason)
-  (unless (music-is-of-type? note-event 'note-event)
-   (ly:error "Only note events can be alterated."))
-  (mensur:event-quality-set! note-event 'altera reason))
-
-#(define-public (mensur:quality-set-partial! rhythmic-event reason partial-factor)
-  (mensur:event-quality-set! rhythmic-event 'partial reason)
-  (ly:music-set-property! rhythmic-event 'mensur:partial-factor partial-factor))
 
 
 #(define-public (mensur:mensurate-event! context rhythmic-event)
@@ -562,7 +490,7 @@
   (let* ((dur (ly:music-property rhythmic-event 'duration))
          (dur-log (ly:duration-log dur))
          (dots (ly:duration-dot-count dur))
-         (complexity (find-post-event rhythmic-event 'early-complexity-event))
+         (quality (find-post-event rhythmic-event 'early-complexity-event))
          (punctum (early:punctum rhythmic-event))
          (subdivision (or (mensur:subdivision context dur-log) 2))
          (subdivision-parent (or (mensur:subdivision context (1- dur-log)) 2))
@@ -587,19 +515,18 @@
    ;; They are ignored if mensura is simple. But:
    ;; – altera is a different and uses parent's subdivision in check
    ;; – complexity and punctum perfectionis do not stack.
-   (when complexity
-    (let ((complexity-type (ly:music-property complexity 'type)))
+   (when quality
+    (let ((quality-type (ly:music-property quality 'quality)))
      (cond
-      ((and (eq? complexity-type 'altera)
+      ((and (eq? quality-type 'altera)
             (not (= subdivision-parent 2)))
-       (%mensur:complexity-event-apply! complexity rhythmic-event))
+       (mensur:music-set-quality! rhythmic-event quality))
       ((and (eq? punctum 'perfectionis)
-            (eq? complexity-type 'partial))
+            (eq? quality-type 'partial))
        (error "Cannot stack together puncumt perfectionis and partial imperfection."))
       ((and (not (eq? punctum 'perfectionis))
             (not (= subdivision 2)))
-       (%mensur:complexity-event-apply! complexity rhythmic-event)))))
-
+       (mensur:music-set-quality! rhythmic-event quality)))))
 
    ;; If mensuration is complex
    ;; but quality is not given,
@@ -607,20 +534,19 @@
    (when (null? (ly:music-property rhythmic-event 'mensur:quality))
     (cond
      ((= subdivision 2)
-      (mensur:quality-set-simple! rhythmic-event 'simple-mensur)) ;; Isn't this redundant?
+      (mensur:make-simple! rhythmic-event 'simple-mensur)) ;; Isn't this redundant?
      ((music-is-of-type? rhythmic-event 'rest-event)
-      (mensur:quality-set-complex! rhythmic-event 'rest))
+      (mensur:make-complex! rhythmic-event 'rest))
      ((eq? punctum 'perfectionis)
-      (mensur:quality-set-complex! rhythmic-event 'punctum-perfectionis))
+      (mensur:make-complex! rhythmic-event 'punctum-perfectionis))
      (implicit ;; HACK: if symbol 'all is returned, it evaluates always to #t.
       ; TO DO: check it twice...
-      (mensur:quality-set-complex! rhythmic-event 'position))
+      (mensur:make-complex! rhythmic-event 'position))
      (else
-      (mensur:quality-set-simple! rhythmic-event 'position))))
+      (mensur:make-simple! rhythmic-event 'position))))
 
    ;; TO DO: supply reason for 'undocumented
    ;; (e.g. similis-ante-similem if the case.)
-
    ;; Calculate, store and apply factor.
    (let ((factor (mensur:factor context rhythmic-event)))
     ;; Store data.

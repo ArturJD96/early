@@ -11,7 +11,7 @@
 %
 % %}
 
-perf = #(define-event-function () () (make-music 'EarlyComplexityEvent 'type 'complex 'reason 'undocumented))
-imp = #(define-event-function () () (make-music 'EarlyComplexityEvent 'type 'simple 'reason 'position))
-part = #(define-event-function (fraction) (fraction?) (make-music 'EarlyComplexityEvent 'type 'partial 'reason 'position 'fraction fraction))
-altera = #(define-event-function () () (make-music 'EarlyComplexityEvent 'type 'altera 'reason 'position))
+perf = #(define-event-function () () (mensur:make-quality 'complex 'undocumented))
+imp = #(define-event-function () () (mensur:make-quality 'simple 'position))
+part = #(define-event-function (fraction) (fraction?) (mensur:make-quality 'partial 'position fraction))
+altera = #(define-event-function () () (mensur:make-quality 'altera 'position))
