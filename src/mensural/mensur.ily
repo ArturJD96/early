@@ -46,19 +46,6 @@
 
 #(define (%mensur-context:default) (mensur:context '() '() 1))
 
-%% Event-quality – additional mensural modification of event itself.
-#(define-record-type <mensur:event-quality>
-  (mensur:event-quality
-   quality  ;; symbol
-   reason)  ;; symbol
-  mensur:event-quality?
-  (quality %mensur-event-quality:quality)
-  (reason  %mensur-event-quality:reason))
-
-% TO DO: Using: event's mensur:make-quality
-
-
-
 %{
 %       All the fields above need to be registered in mensur:fields
 %       to make the helper functions and type checking work.
@@ -490,7 +477,7 @@
   (let* ((dur (ly:music-property rhythmic-event 'duration))
          (dur-log (ly:duration-log dur))
          (dots (ly:duration-dot-count dur))
-         (quality (find-post-event rhythmic-event 'early-complexity-event))
+         (quality (find-post-event rhythmic-event 'mensur-quality-event))
          (punctum (early:punctum rhythmic-event))
          (subdivision (or (mensur:subdivision context dur-log) 2))
          (subdivision-parent (or (mensur:subdivision context (1- dur-log)) 2))

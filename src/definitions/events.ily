@@ -162,6 +162,11 @@
 
 
 
+
+
+
+
+
 % TO DO: consult a good source on definitions of those terms.
 #(define mensur:quality-reasons `(
   ;; Usual case.
@@ -195,7 +200,7 @@
 
 #(define-public mensur:make-quality ; TO DO: use & implement
   (early:define-constructable-music-event!
-   'EarlyComplexityEvent ; TO DO: remove 'early:', TO DO: change to 'EarlyQualityEvent, TO DO: lookup 'early-complex-event as weel.
+   'MensurQualityEvent ;  TO DO: lookup 'early-complex-event as weel.
    "Note duration is recalculated using \\mensura."
    '(early:mensur-event post-event event StreamEvent)
    '()
@@ -209,7 +214,6 @@
 #(define-public (mensur:reason quality-event) (ly:music-property quality-event 'reason))
 #(define-public (mensur:fraction quality-event)
   (let ((fraction (ly:music-property quality-event 'fraction)))
-   (display fraction)
    (if (null? fraction) '(1 . 1) fraction)))
 
 
@@ -221,8 +225,8 @@
 
   (unless (music-is-of-type? rhythmic-event 'rhythmic-event)
    (ly:error "Only rhythmic-events can have mensural quality, not ~A" rhythmic-event))
-  (unless (music-is-of-type? quality 'early-complexity-event)
-   (ly:error "Wrong type of quality. Must be 'early-complex-event, is ~A" quality))
+  (unless (music-is-of-type? quality 'mensur-quality-event)
+   (ly:error "Wrong type of quality. Must be 'mensur-quality-event', is ~A" quality))
 
   (let* ((quality-type (mensur:quality quality))
          (reason (mensur:reason quality))
