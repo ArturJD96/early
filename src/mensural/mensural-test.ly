@@ -2,7 +2,6 @@
 \include "./../testing.ily"
 \include "./mensural.ly"
 \include "./puncta.ly"
-\include "./quality.ly"
 
 
 
@@ -92,8 +91,6 @@
   (test-equal 'divisionis (early:punctum #{ d \pdiv #}))
   (test-equal #f (early:punctum #{ d #}))
 )
-
-% ;; TO DO: "EarlyComplexityEvent" !!!
 
 #(testing "Quality."
 

@@ -21,7 +21,7 @@
     (lambda () (early:test-runner)) ;; Defined below.
     (lambda () (test-runner-null)))))
 
-#(early:testing-run #f)
+#(early:testing-run #t)
 
 %{
 %

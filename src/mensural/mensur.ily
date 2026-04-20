@@ -1,6 +1,7 @@
 \version "2.24.4"
 \include "./../definitions/events.ily" % TO DO: de-centralize and define early:MensurSetting and MensurEvent here?
 \include "./../testing.ily"
+\include "./mensur-quality-event.ily"
 #(use-modules (srfi srfi-9))
 
 %{
@@ -14,6 +15,11 @@
 %       Based on this mensuration context,
 %       `\mensural` can adjust note durations.
 % %}
+
+
+% TO DO:
+% MOVE EVERYTHING TO MUSIC_OBJECTS, NOT REGISTERS
+% SEE: 'mensur-quality-event' for an example.
 
 %% Relationship – mensural-related data of the context.
 #(define-record-type <mensur:relationship>
@@ -51,6 +57,7 @@
 %       to make the helper functions and type checking work.
 % %}
 
+% TO DO: this should be moved to early:define-constructable-music-event.
 #(define %mensur:fields `(
   (subdivision .
    ((description . "How many durations of durlog `d` has a duration of durlog `d-1`.")
@@ -262,14 +269,14 @@
                                     (0 . #f)))   ;; Removing old subdivision.
                     (proportio .   2/3)))
 
-  (mensur:update! c (make-music 'early:MensurSetting values1))
+  (mensur:update! c (make-music 'MensurContextSetting values1))
   (test-group "Pushing to fresh mensur-context."
    (test-equal "Added fresh to mensur-relationship." 3 (mensur:subdivision c -1))
    (test-equal "Added fresh to mensur-setting." 3 (mensur:subdivision c 0))
    (test-equal "Added fresh to mensur-setting." #t (mensur:implicit c 0))
   )
 
-  (mensur:update! c (make-music 'early:MensurSetting values2))
+  (mensur:update! c (make-music 'MensurContextSetting values2))
   (test-group "Modifying filled mensur-context."
    (test-equal "Added fresh to mensur-relationship." 5 (mensur:subdivision c -2))
    (test-equal "Not overriding old mensur-relationship." 3 (mensur:subdivision c -1))
@@ -279,14 +286,14 @@
    (test-equal "Overriding mensur-context field." 2/3 (mensur:proportio c))
   )
 
-  (mensur:update! c (make-music 'early:MensurSetting 'implicit '(1 . #t)))
+  (mensur:update! c (make-music 'MensurContextSetting 'implicit '(1 . #t)))
   (test-equal "Updating works with pairs." #t (mensur:implicit c 1))
 
 )
 
 
 #(define-public (mensur:override! context mensur-event)
-  "Modify mensur-context top-level fields from MensurEvent exept of mensur-settings.
+  "Modify mensur-context top-level fields from EarlyMensuraEvent exept of mensur-settings.
    This is because mensur settings are lilypond- and early-specific and do not
    interface directly with the semantics of mensural score."
 
@@ -310,7 +317,7 @@
      ((pair? new-relationships)
       (list (validate-relationship-pair new-relationships)))
      (else
-      (ly:error "Wrong type of 'relationship field in early:MensurEvent: \"~a\"." new-relationships))))
+      (ly:error "Wrong type of 'relationship field in EarlyMensuraEvent \"~a\"." new-relationships))))
 
    (%mensur-context:proportio! context
     (cond
@@ -319,21 +326,20 @@
      (((%mensur:field-data 'proportio 'type) new-proportio)
       new-proportio)
      (else
-      (ly:error "Wrong type of 'proportio field in early:MensurEvent: \"~a\"." new-proportio))))
+      (ly:error "Wrong type of 'proportio field in EarlyMensuraEvent \"~a\"." new-proportio))))
 
 ))
 
 #(testing "Context override."
   (define c (mensur:default))
-  (mensur:update! c (make-music 'early:MensurSetting 'subdivision '(0 . 3) 'implicit '(0 . #t) 'proportio 2))
-  (mensur:override! c (make-music 'early:MensurEvent 'relationships '(1 . 5)))
+  (mensur:update! c (make-music 'MensurContextSetting 'subdivision '(0 . 3) 'implicit '(0 . #t) 'proportio 2))
+  (mensur:override! c (make-music 'EarlyMensuraEvent 'relationships '(1 . 5)))
   (test-equal "Adds subdivisions." 5 (mensur:subdivision c 1))
   (test-equal "Removes subdivisions." 2 (mensur:subdivision c 0))
   (test-equal "Overrides proportio." 1 (mensur:proportio c))
   (test-equal "Leaves settings intact." #t (mensur:implicit c 0))
 )
 
-% TO DO: replace with native 'event-has-articulation?' method.
 #(define (find-post-event music event)
   "Find post-event attached to music's articulations."
   (find (lambda (a) (music-is-of-type? a event))
@@ -553,7 +559,7 @@
 #(testing "Mensurate"
   ;; More detailed tests in `mensural.test.ly` file.
   (define c (mensur:default))
-  (mensur:update! c (make-music 'early:MensurSetting 'subdivision '((-1 . 3)(0 . 3)(1 . 3)) 'implicit '((-1 . #t)(0 . #f)(1 . #f))))
+  (mensur:update! c (make-music 'MensurContextSetting 'subdivision '((-1 . 3)(0 . 3)(1 . 3)) 'implicit '((-1 . #t)(0 . #f)(1 . #f))))
   (define (event-of-dur event-name dur)
    (make-music event-name 'duration (ly:make-duration dur 0)))
   (define (event-length event-name dur)
@@ -567,6 +573,6 @@
   (test-equal "Note (simple)." 1/2 (event-length 'NoteEvent 1))
   (test-equal "Note (implicitly simple)." 3/2 (event-length 'NoteEvent 0))
   (test-equal "Note (implicitly complex)." 27/4 (event-length 'NoteEvent -1))
-  (mensur:override! c (make-music 'early:MensurEvent 'relationships '((1 . 3)))) ;; 'prolatio.
+  (mensur:override! c (make-music 'EarlyMensuraEvent 'relationships '((1 . 3)))) ;; 'prolatio.
   (test-equal "Note (simple itself but with complex subdivisions below." 3/2 (event-length 'NoteEvent 0))
 )

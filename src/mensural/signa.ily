@@ -16,10 +16,10 @@
 %       It is an alist of mensur:relationship.
 % %}
 #(define-public early:mensur-signa
-  `((C   . ,(make-music 'early:MensurEvent))
-    (O   . ,(make-music 'early:MensurEvent 'relationships (list mensur:tempus-perfectum)))
-    (C.  . ,(make-music 'early:MensurEvent 'relationships (list mensur:prolatio-maior)))
-    (O.  . ,(make-music 'early:MensurEvent 'relationships (list mensur:tempus-perfectum mensur:prolatio-maior)))
+  `((C   . ,(make-music 'EarlyMensuraEvent))
+    (O   . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:tempus-perfectum)))
+    (C.  . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:prolatio-maior)))
+    (O.  . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:tempus-perfectum mensur:prolatio-maior)))
 
   ;; Sources of symbols:
   ;; https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs

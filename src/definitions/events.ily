@@ -1,10 +1,6 @@
 \version "2.24.3"
 \include "../testing.ily"
 
-% TO DO !!!
-% Eliminate 'early:' suffix – it causes segmentation troubles. Use 'EarlyThingyEvent'.
-% Remove -event from make- constructors (if applicable)
-
 %% Some validators
 
 % TO DO: make it a part of 'validation' relaxng-like library
@@ -107,47 +103,101 @@
 )
 
 #(unless (ly:make-event-class 'early-event)
-  (define-event-class 'early-event 'music-event)
-  (define-event-class 'early:mensur-event 'early-event))
+  (define-event-class 'early-event 'music-event))
 
+% TO DO: move to mensur
+#(unless (ly:make-event-class 'mensur-event)
+  (define-event-class 'mensur-event 'early-event))
+
+% TO DO: move to mensur
 #(define-public early:make-mensur-event ; TO DO: use & implement
   (early:define-constructable-music-event!
-   'early:MensurEvent ; TO DO: remove 'early:'
+   'EarlyMensuraEvent
    "An event created when setting a new mensuration. Used in music processed with '\\mensural'."
-   '(early:mensur-event time-signature-event StreamEvent)
+   '(mensur-event time-signature-event StreamEvent)
    ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
    ;  (elements-callback . ,make-mensura-event))
    '()
    ; TO DO: validators
 ))
 
+% TO DO: move to mensur
 #(define-public early:make-mensur-music ; TO DO: use & implement
   (early:define-constructable-music-event!
-   'early:MensurMusic ; TO DO: remove 'early:'
+   'EarlyMensuraMusic
    "An event created when setting a new mensuration. Used in music processed with '\\mensural'."
-   '(early:mensur-event time-signature-music StreamEvent)
+   '(mensur-event time-signature-music StreamEvent)
    ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
    ;  (elements-callback . ,make-mensura-event))
    '()
    ; TO DO: validators
 ))
 
+
+
+
+
+
+
+% START REFACTOR HERE HERE HERE !
+
+% TO DO: remove this notion alltogether?
+#(define-public mensur:make-relationship ; TO DO: use & implement
+  (early:define-constructable-music-event!
+   'MensurRelationshipEvent
+   "Mensural-related data of the context."
+   '(mensur-event) '()
+   `(subdivision . ,integer?)
+))
+
+%% TO DO: compare with MensurContextSetting... is it the same thing?
+#(define-public mensur:make-setting ; TO DO: use & implement
+  (early:define-constructable-music-event!
+   'MensurSettingEvent
+   "Internal Early mensuration interface settings."
+   '(mensur-event) '()
+   `(implicit . ,(lambda (s) (or (boolean? s) (eq? s 'all))))
+   `(as-tuplet . ,boolean?)
+))
+
+% TO DO: move HERE everything from <mensur:context>.
+#(define-public mensur:make-context ; TO DO: use & implement
+  (early:define-constructable-music-event!
+   'MensurContextEvent
+   "All information needed for note mensuration (i.e. duration recalculation)."
+   '(mensur-event)
+   ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
+   ;  (elements-callback . ,make-mensura-event))
+   '()
+   ; TO DO: better validators
+   `(relationships . ,alist?) ;; alist (dur-log . mensur:relationship) ; TO DO: alist OF RELATIONSHIPS
+   `(proportio . ,fraction?) ; TO DO: for now is a NUMBER
+   `(settings . ,alist?) ;; alist (dur-log . mensur:settings)
+))
+
+
+
+
+
+% TO DO: move to 'mensur-context-setting'
 #(define-public early:make-mensur-setting ; TO DO: use & implement
   (early:define-constructable-music-event!
-   'early:MensurSetting ; TO DO: remove 'early:'
+   'MensurContextSetting
    "Set a mensuration setting. Used in music processed with '\\mensural'. Mensuration setting are Lilypond and Early features that allow for modification of mensural music doration interpretation (e.g. interpreting a note as made of tuplets). Useful with 'oldschool' transcriptions of medieval music."
-   '(early:mensur-event StreamEvent) ; included 'time-signature-music' ..?
+   '(mensur-event StreamEvent) ; included 'time-signature-music' ..?
    ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
    ;  (elements-callback . ,make-mensura-event))
    '()
    ; TO DO: validators
 ))
 
+
+% TO DO: move to 'mensur-punctum-event'
 #(define-public early:make-punctum-event ; TO DO: use & implement
   (early:define-constructable-music-event!
-   'EarlyPunctumEvent ; TO DO: remove 'early:'
+   'EarlyPunctumEvent
    "A point whose semantic function and layout differs vastly among early music editions."
-   '(early:mensur-event post-event event StreamEvent)
+   '(mensur-event post-event event StreamEvent)
    '()
    ; TO DO: validators
 ))
@@ -162,102 +212,6 @@
 
 
 
-
-
-
-
-
-% TO DO: consult a good source on definitions of those terms.
-#(define mensur:quality-reasons `(
-  ;; Usual case.
-  (simple-mensur .
-   ((description . "Mensura is duplex so complex mensuration does not apply")
-    (event . rhythmic-event)
-    (qualities . (simple))))
-  ;; Reasons for complex.
-  (rest .
-   ((description . "Rest in mensural music is compulsory complex in complex meters.")
-    (event . rest-event)
-    (qualities . (complex))))
-  (position .
-   ((description . "Note mensuration is deduced from position.")
-    (event . note-event)
-    (qualities . (simple complex partial altera))))
-  (punctum-perfectionis .
-   ((descritpion . "In complex mensura, note is complex (perfect) because it followed by an immediate dot.")
-    (event . note-event)
-    (qualities . (complex))))
-  ;; For documentation purposes.
-  (undocumented .
-   ((description . "The reason for mensuration is not explicitly provided")
-    (event . rhythmic-event)
-    (qualities . (complex simple partial altera))))
-  (exception .
-   ((description . "A note defies mensural rules")
-    (event . rhythmic-event)
-    (qualities . (complex simple partial altera))))
-))
-
-#(define-public mensur:make-quality ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'MensurQualityEvent ;  TO DO: lookup 'early-complex-event as weel.
-   "Note duration is recalculated using \\mensura."
-   '(early:mensur-event post-event event StreamEvent)
-   '()
-   ; TO DO: validators
-   `(quality . ,(choice '(simple complex partial altera)))
-   `(reason . ,(choice (map car mensur:quality-reasons))) ;; reason? undefined
-   `(fraction . ,(nullable fraction?)) ;; or undefined.
-))
-
-#(define-public (mensur:quality quality-event) (ly:music-property quality-event 'quality))
-#(define-public (mensur:reason quality-event) (ly:music-property quality-event 'reason))
-#(define-public (mensur:fraction quality-event)
-  (let ((fraction (ly:music-property quality-event 'fraction)))
-   (if (null? fraction) '(1 . 1) fraction)))
-
-
-#(define-public (mensur:music-is-of-quality? rhythmic-event quality-type) ; TO DO: implement!
-  (eq? (mensur:quality (ly:music-property rhythmic-event 'mensur:quality))
-       quality-type))
-
-#(define (mensur:music-set-quality! rhythmic-event quality)
-
-  (unless (music-is-of-type? rhythmic-event 'rhythmic-event)
-   (ly:error "Only rhythmic-events can have mensural quality, not ~A" rhythmic-event))
-  (unless (music-is-of-type? quality 'mensur-quality-event)
-   (ly:error "Wrong type of quality. Must be 'mensur-quality-event', is ~A" quality))
-
-  (let* ((quality-type (mensur:quality quality))
-         (reason (mensur:reason quality))
-         (reason-data (assq-ref mensur:quality-reasons reason)))
-
-   (unless reason-data
-    (ly:error "Unrecognized mensur quality reason: \"~a\"." reason))
-   (unless (memq quality-type (assq-ref reason-data 'qualities))
-    (ly:error "\"~a\" is not a valid mensural quality reason for a \"~a\" quality. Valid reasons are: ~a." reason quality-type (assq-ref reason-data 'qualities)))
-   (unless (music-is-of-type? rhythmic-event (assq-ref reason-data 'event))
-    (ly:error "Event cannot have a mensur quality ~a of reason ~a." quality-type reason))
-
-   (ly:music-set-property! rhythmic-event 'mensur:quality quality))
-)
-
-
-#(define-public (mensur:make-simple! rhythmic-event reason)
-  (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'simple reason)))
-
-#(define-public (mensur:make-complex! rhythmic-event reason)
-  (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'complex reason)))
-
-#(define-public (mensur:make-altera! note-event reason)
-  (mensur:music-set-quality!
-   (mensur:make-quality 'altera reason)))
-
-#(define-public (mensur:make-partial! rhythmic-event reason fraction)
-  (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'partial reason fraction)))
 
 
 %% Left here for future considerations.

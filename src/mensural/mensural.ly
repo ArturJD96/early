@@ -11,7 +11,7 @@
 %% I create my own music iterator allowing
 %% 1) mensural-context injection.
 %% 2) scope-limited updates to mensural-context
-%%    using MensurEvents and MensurSettings
+%%    using EarlyMensuraEvent and MensurSettings
 %%
 %% I am overriding 'for-some-music' and not 'music-map' because:
 %% 1) it has shorter and shallower definition;
@@ -49,10 +49,10 @@ mensural = #(define-music-function (music) (ly:music?)
     (cond
       ; ((music-is-of-type? m 'sequential-music)
       ;  (...)) ;; go further? Do not mensurate if indicated? Turn into modern notation?
-     ((music-is-of-type? m 'early:mensur-event)
+     ((music-is-of-type? m 'mensur-event)
       (case (ly:music-property m 'name) ;; update the mensural context
-       ((early:MensurEvent) (mensur:override! mensur m))
-       ((early:MensurSetting) (mensur:update! mensur m))))
+       ((EarlyMensuraEvent) (mensur:override! mensur m))
+       ((MensurContextSetting) (mensur:update! mensur m))))
      ((music-is-of-type? m 'rhythmic-event)
       (mensur:mensurate-event! mensur m)) ;; append mensural properties, store old duration and modify duration.
      (else #f)
@@ -74,7 +74,7 @@ mensura = #(define-music-function (signum) (symbol?)
  ;; OLD CODE:
  ; (let ((mensur (early:signum->mensur-event signum)))
  ;   (make-music
- ;    'early:MensurEvent
+ ;    'EarlyMensuraEvent
  ;    'mensura-type 'signum ;; or: color, hollow, proportion, divisio (Italian, see MEI)
  ;    'signum signum
  ;    'relationships (mensur:relationships mensur)
