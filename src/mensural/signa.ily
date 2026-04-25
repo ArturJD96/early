@@ -6,20 +6,20 @@
 %       Some complex subdivisions.
 % %}
 #(define-public mensur:tempus-perfectum
-  (cons -1 (mensur:relationship 3)))
+  (mensur:make-subdivision -1 3)) % done!
 
 #(define-public mensur:prolatio-maior
-  (cons 0 (mensur:relationship 3)))
+  (mensur:make-subdivision 0 3)) % done!
 
 %{
 %       Symbols used with "mensura" command.
-%       It is an alist of mensur:relationship.
+%       It is an alist of subdivisions
 % %}
 #(define-public early:mensur-signa
-  `((C   . ,(make-music 'EarlyMensuraEvent))
-    (O   . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:tempus-perfectum)))
-    (C.  . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:prolatio-maior)))
-    (O.  . ,(make-music 'EarlyMensuraEvent 'relationships (list mensur:tempus-perfectum mensur:prolatio-maior)))
+  `((C   . ,(mensur:make-mensura-event '()))
+    (O   . ,(mensur:make-mensura-event (list mensur:tempus-perfectum)))
+    (C.  . ,(mensur:make-mensura-event (list mensur:prolatio-maior)))
+    (O.  . ,(mensur:make-mensura-event (list mensur:tempus-perfectum mensur:prolatio-maior)))
 
   ;; Sources of symbols:
   ;; https://wiki.ccarh.org/wiki/MuseData_Example:_mensural_signs

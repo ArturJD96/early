@@ -1,7 +1,6 @@
 \version "2.24.4"
 \include "./../definitions/events.ily"
 \include "./mensur.ily"
-\include "./settings.ly"
 \include "./signa.ily"
 \include "./puncta.ly"
 
@@ -51,7 +50,8 @@ mensural = #(define-music-function (music) (ly:music?)
       ;  (...)) ;; go further? Do not mensurate if indicated? Turn into modern notation?
      ((music-is-of-type? m 'mensur-event)
       (case (ly:music-property m 'name) ;; update the mensural context
-       ((EarlyMensuraEvent) (mensur:override! mensur m))
+       ((EarlyMensuraEvent) (mensur:subdivisions! mensur (ly:music-property m 'subdivisions)))
+       ((EarlyProportioEvent) (mensur:proportio! mensur (ly:music-property m 'proportio)))
        ((MensurContextSetting) (mensur:update! mensur m))))
      ((music-is-of-type? m 'rhythmic-event)
       (mensur:mensurate-event! mensur m)) ;; append mensural properties, store old duration and modify duration.

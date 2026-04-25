@@ -47,7 +47,7 @@
 #(define-public (mensur:reason quality-event) (ly:music-property quality-event 'reason))
 #(define-public (mensur:fraction quality-event)
   (let ((fraction (ly:music-property quality-event 'fraction)))
-   (if (null? fraction) '(1 . 1) fraction)))
+   (if (null? fraction) 1 fraction)))
 
 % Not needed?
 % #(define-public (mensur:music-is-of-quality? rhythmic-event quality-type) ; TO DO: implement!
@@ -88,9 +88,10 @@
   (mensur:music-set-quality!
    (mensur:make-quality 'altera reason)))
 
-#(define-public (mensur:make-partial! rhythmic-event reason fraction)
+#(define-public (mensur:make-partial! rhythmic-event reason fraction-pair) ;; In scheme, Lilypond's fraction is received as pair.
   (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'partial reason fraction)))
+   (mensur:make-quality 'partial reason
+    (/ (car fraction-pair) (cdr fraction-pair)))))
 
 perf = #(define-event-function () () (mensur:make-quality 'complex 'undocumented))
 imp = #(define-event-function () () (mensur:make-quality 'simple 'position))

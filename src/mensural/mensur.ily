@@ -1,8 +1,14 @@
 \version "2.24.4"
 \include "./../definitions/events.ily" % TO DO: de-centralize and define early:MensurSetting and MensurEvent here?
 \include "./../testing.ily"
+
+\include "./init-mensur-events.ily"
+\include "./mensur-context-event.ily"
+\include "./mensur-mensura-event.ily"
 \include "./mensur-quality-event.ily"
-#(use-modules (srfi srfi-9))
+\include "./mensur-punctum-event.ily"
+
+
 
 %{
 %       🌺 M E N S U R .ily 🌺
@@ -17,186 +23,54 @@
 % %}
 
 
-% TO DO:
-% MOVE EVERYTHING TO MUSIC_OBJECTS, NOT REGISTERS
-% SEE: 'mensur-quality-event' for an example.
-
-%% Relationship – mensural-related data of the context.
-#(define-record-type <mensur:relationship>
-  (mensur:relationship subdivision) ;; integer
-  mensur:relationship?
-  (subdivision  %mensur-relationship:subdivision  %mensur-relationship:subdivision!))
-
-#(define (%mensur-relationship:default) (mensur:relationship 2))
-
-%% Setting – internal Early mensuration interface settings.
-#(define-record-type <mensur:setting>
-  (mensur:setting implicit   ;; boolean or symbol ('all)
-                  as-tuplet) ;; boolean
-   mensur:setting?
-   (implicit   %mensur-setting:implicit   %mensur-setting:implicit!)
-   (as-tuplet  %mensur-setting:as-tuplet  %mensur-setting:as-tuplet!))
-
-#(define (%mensur-setting:default) (mensur:setting #f #f))
-
-%% Context – all information needed for note mensuration (i.e. duration recalculation).
-#(define-record-type <mensur:context>
-  (mensur:context
-   relationships ;; alist (dur-log . mensur:relationship)
-   settings      ;; alist (dur-log . mensur:settings)
-   proportio)    ;; number
-  mensur:context?
-  (relationships  %mensur-context:relationships  %mensur-context:relationships!)
-  (settings       %mensur-context:settings       %mensur-context:settings!)
-  (proportio      %mensur-context:proportio      %mensur-context:proportio!))
-
-#(define (%mensur-context:default) (mensur:context '() '() 1))
-
-%{
-%       All the fields above need to be registered in mensur:fields
-%       to make the helper functions and type checking work.
-% %}
-
-% TO DO: this should be moved to early:define-constructable-music-event.
-#(define %mensur:fields `(
-  (subdivision .
-   ((description . "How many durations of durlog `d` has a duration of durlog `d-1`.")
-    (owner . relationship)
-    (default . 2)
-    (type . ,positive?)))
-  (implicit .
-   ((description . "Does a note with duration needs to be explicitly marked as e.g. perfect to subdivide as in subdivision.")
-    (owner . setting)
-    (default  . #f)
-    (type . ,boolean?)))
-  (as-tuplet .
-   ((description . "Does the subdivision of a note is treated as a tuplet (e.g. perfect notes divide into triols). This can be used in an old-school medieval music modern transcriptions.")
-    (owner . setting)
-    (default  . #f)
-    (type . ,boolean?)))
-  (settings .
-   ((description . "Mensural settings for Early-specific options.")
-    (owner . context)
-    (default . '())
-    (type . ,(lambda (s) (or (boolean? s) (eq? s 'all))) )))
-  (proportio .
-   ((description . "Mensural \"proportio\".")
-    (owner . context)
-    (default . 1)
-    (type . ,fraction?)))
-))
-
-#(define (%mensur:field-data field-name data-name)
-  "Access nested %mensur:fields data."
-  (let* ((field (assq-ref %mensur:fields field-name))
-         (data (assq-ref (or field '()) data-name))
-         (type (assq-ref (or field '()) 'type)))
-   (unless field (ly:error "Wrong mensur field name: \"~a\"." field-name))
-   (unless (eq? type boolean?)
-    (unless data (ly:error "Wrong data name: \"~a\"." data-name)))
-   data))
-
-%{
-%       For convenience, let us access all the inner
-%       mensur:context alist records accessors and setters
-%       from the level of top object (mensur-context)...
-% %}
-
-#(define (guard-durlog dur-log)
-  (unless (integer? dur-log) (ly:error "Wrong type of dur-log. Must be an integer, but is ~a." dur-log))
-  dur-log)
-
-
-#(define (%mensur:proc-name field-name setter?)
-  "Lookup to which mensur subrecord a field belongs to."
-  (let ((sym (symbol-append '%mensur-
-                            (%mensur:field-data field-name 'owner)
-                            ':
-                            field-name)))
-   (if setter?
-    (symbol-append sym '!)
-    sym)))
-
-
-#(define (%mensur:make-subrecord-setter field-name . symbols-if-not-alist)
-
-  (let* ((env (interaction-environment))
-         (alist-field-name (%mensur:field-data field-name 'owner))
-         (default-constructor (eval (symbol-append '%mensur- alist-field-name ':default) env))
-         (type-guard (%mensur:field-data field-name 'type))
-         (alist-proc-name (symbol-append '%mensur-context: alist-field-name 's))
-         (alist-getter (eval alist-proc-name env))
-         (alist-setter (eval (symbol-append alist-proc-name '!) env))
-         (field-setter (eval (%mensur:proc-name field-name #t) env)))
-
-   (lambda (context dur-log value)
-    (type-guard value)
-    (let* ((alist (alist-getter context))
-           (subrecord (assq-ref alist dur-log)))
-     (unless subrecord (set! subrecord (default-constructor)))
-     ;; Modify targeted subrecord.
-     (field-setter subrecord value)
-     ;; Put this subrecord to alist (again).
-     ;; and re-attach alist to context.
-     (alist-setter context (assq-set! alist dur-log subrecord))
-     ;; Return original context.
-     context))
-
-))
-
-
-#(define (%mensur:make-subrecord-getter field-name)
-
-  (let* ((env (interaction-environment))
-         (alist-field-name (%mensur:field-data field-name 'owner))
-         (alist-proc-name (symbol-append '%mensur-context: alist-field-name 's))
-         (alist-getter (eval alist-proc-name env))
-         (field-getter (eval (%mensur:proc-name field-name #f) env))
-         (field-default (%mensur:field-data field-name 'default)))
-
-   ;; mensur:field getter.
-   (lambda (context dur-log)
-    (guard-durlog dur-log)
-    (let* ((alist-or-symbol (alist-getter context))
-           (subrecord (assq-ref alist-or-symbol dur-log)))
-     (if subrecord
-         (field-getter subrecord)
-         field-default)))
-
-))
-
 %{
 %       PUBLIC INTERFACE
 %       Access and set mensur subrecords from the level of mensur itself.
 %       This is the public interface of the `mensur-context` record.
 % %}
 
-#(define-public mensur:subdivision (%mensur:make-subrecord-getter 'subdivision))
-#(define-public mensur:subdivision! (%mensur:make-subrecord-setter 'subdivision))
-
-#(define-public mensur:implicit (%mensur:make-subrecord-getter 'implicit))
-#(define-public mensur:implicit! (%mensur:make-subrecord-setter 'implicit))
-
-#(define-public mensur:as-tuplet (%mensur:make-subrecord-getter 'as-tuplet))
-#(define-public mensur:as-tuplet! (%mensur:make-subrecord-setter 'as-tuplet))
-
-%% Direct fields of mensur-context can be accessed directly.
-#(define-public mensur:settings %mensur-context:settings)
-#(define-public mensur:settings! %mensur-context:settings!)
-#(define-public mensur:proportio %mensur-context:proportio)
-#(define-public mensur:proportio! %mensur-context:proportio!)
-
-%% Helpers for rhythmic-event mensural quality.
-% #(define-public mensur:quality %mensur-event-quality:quality)
-% #(define-public mensur:reason %mensur-event-quality:reason)
-
 #(define-public (mensur:subdivisions context)
-  "Return the alist ((dur-log . subdivision-value))."
-  (map (lambda (pair)
-        (cons (car pair) (%mensur-relationship:subdivision (cdr pair))))
-   (%mensur-context:relationships context)))
+  (ly:music-property context 'subdivisions))
+#(define-public (mensur:subdivisions! context subdivisions) ;; TO DO: typing.
+  (ly:music-set-property! context 'subdivisions subdivisions))
 
-#(define-public mensur:default %mensur-context:default)
+#(define-public (mensur:proportio context)
+  (ly:music-property context 'proportio))
+#(define-public (mensur:proportio! context proportio)
+  (ly:music-set-property! context 'proportio proportio))
+
+#(define-public (mensur:settings context)
+  (ly:music-property context 'settings))
+#(define-public (mensur:settings! context settings)
+  (ly:music-set-property! context 'settings settings))
+
+#(define-public (mensur:subdivision context dur-log)
+  (or (assq-ref (mensur:subdivisions context) dur-log) 2)) % TO DO: make default value explicit: 2.
+#(define-public (mensur:subdivision! context dur-log subdivision) ; TO DO: typecheck.
+  (mensur:subdivisions! context
+   (assq-set! (mensur:subdivisions context) dur-log subdivision)))
+
+#(define-public (mensur:setting context dur-log)
+  (or (assq-ref (mensur:settings context) dur-log) '())) % TO DO: make default value explicit: '().
+#(define-public (mensur:setting! context dur-log setting) ; TO DO: typecheck: (music-is-type-of m 'MensurSettingEvent)
+  (mensur:settings! context
+   (assq-set! (mensur:settings context) dur-log setting)))
+
+#(define-public (mensur:implicit context dur-log)
+  (or (assq-ref (mensur:setting context dur-log) 'implicit) #f)) % ;; TO DO: make default value explicit: #f.
+#(define-public (mensur:implicit! context dur-log bool)
+  (mensur:setting! context dur-log
+   (let ((setting (mensur:setting context dur-log)))
+    (unless setting (set! setting (mensur:make-default-setting)))
+    (assq-set! setting 'implicit bool))))
+
+#(define-public (mensur:as-tuplet context dur-log)
+  (or (assq-ref (mensur:setting context dur-log) 'as-tuplet) #f)) % ;; TO DO: make default value explicit: #f.
+#(define-public (mensur:as-tuplet! context dur-log bool)
+  (mensur:setting! context dur-log
+   (let ((setting (mensur:setting context dur-log)))
+    (unless setting (set! setting (mensur:make-default-setting)))
+    (assq-set! setting 'as-tuplet bool))))
 
 #(testing "Context-level subrecord setters."
   (define c (mensur:default))
@@ -235,24 +109,20 @@
 
 #(define-public (mensur:update! context mensur-setting-event)
   "Modify mensur-context applying to its settings from MensurSetting event."
-
   (for-each
-   (lambda (field-name)
-    (let ((field-setter (eval (symbol-append 'mensur: field-name '!) (interaction-environment)))
-          (fied-reset '())
-          (field-new-value (ly:music-property mensur-setting-event field-name)))
-     ;; `new-value` of `mensur-setting-event` should be alists, but they can be pairs!
-     ;; If that's the case, turn them into alist.
+   (lambda (prop)
+    (let* ((field (car prop))
+           (set-field (eval (symbol-append 'mensur: field '!) (interaction-environment)))
+           (new-val (cdr prop)))
      (cond
-      ((null? field-new-value) '())
-      ((alist? field-new-value)
-       (for-each (lambda (pair) (field-setter context (car pair) (cdr pair))) field-new-value))
-      ((pair? field-new-value)
-       (field-setter context (car field-new-value) (cdr field-new-value)))
+      ((null? new-val) '())
+      ((alist? new-val)
+       (for-each (lambda (pair) (set-field context (car pair) (cdr pair))) new-val))
+      ((pair? new-val)
+       (set-field context (car new-val) (cdr new-val)))
       (else
-       (field-setter context field-new-value)))))
-
-   (map car %mensur:fields))
+       (set-field context new-val)))))
+   (ly:music-mutable-properties mensur-setting-event))
 )
 
 
@@ -260,14 +130,10 @@
 
   ;; Preparing variables. Mensur-context `c` is going to be modified.
   (define c (mensur:default))
+
   (define values1 '((subdivision . ((-1 . 3)
                                     (0 . 3)))
                     (implicit .    ((0 . #t)))))
-  (define values2 '((subdivision . ((-2 . 5)     ;; Adding new subdivision.
-                                    (0 . 5)))    ;; Overridin old subdivision.
-                    (implicit .    ((-2 . #t)    ;; Adding new subdivision.
-                                    (0 . #f)))   ;; Removing old subdivision.
-                    (proportio .   2/3)))
 
   (mensur:update! c (make-music 'MensurContextSetting values1))
   (test-group "Pushing to fresh mensur-context."
@@ -275,6 +141,12 @@
    (test-equal "Added fresh to mensur-setting." 3 (mensur:subdivision c 0))
    (test-equal "Added fresh to mensur-setting." #t (mensur:implicit c 0))
   )
+
+  (define values2 '((subdivision . ((-2 . 5)     ;; Adding new subdivision.
+                                    (0 . 5)))    ;; Overridin old subdivision.
+                    (implicit .    ((-2 . #t)    ;; Adding new subdivision.
+                                    (0 . #f)))   ;; Removing old subdivision.
+                    (proportio .   2/3)))    ;; adding proportion.
 
   (mensur:update! c (make-music 'MensurContextSetting values2))
   (test-group "Modifying filled mensur-context."
@@ -292,134 +164,6 @@
 )
 
 
-#(define-public (mensur:override! context mensur-event)
-  "Modify mensur-context top-level fields from EarlyMensuraEvent exept of mensur-settings.
-   This is because mensur settings are lilypond- and early-specific and do not
-   interface directly with the semantics of mensural score."
-
-  (define (validate-relationship-pair pair)
-   (let ((dur-log (car pair))
-         (rel (cdr pair)))
-    (cond
-     ((number? rel) (cons dur-log (mensur:relationship rel)))
-     ((mensur:relationship? rel) pair)
-     (else (ly:error "Wrong type of \"~a\", must be a number or mensur:relationship." rel)))))
-
-  (let ((new-relationships (ly:music-property mensur-event 'relationships))
-        (new-proportio (ly:music-property mensur-event 'proportio)))
-
-   (%mensur-context:relationships! context
-    (cond
-     ((null? new-relationships)
-      '())
-     ((alist? new-relationships)
-      (map validate-relationship-pair new-relationships))
-     ((pair? new-relationships)
-      (list (validate-relationship-pair new-relationships)))
-     (else
-      (ly:error "Wrong type of 'relationship field in EarlyMensuraEvent \"~a\"." new-relationships))))
-
-   (%mensur-context:proportio! context
-    (cond
-     ((null? new-proportio)
-      1)
-     (((%mensur:field-data 'proportio 'type) new-proportio)
-      new-proportio)
-     (else
-      (ly:error "Wrong type of 'proportio field in EarlyMensuraEvent \"~a\"." new-proportio))))
-
-))
-
-#(testing "Context override."
-  (define c (mensur:default))
-  (mensur:update! c (make-music 'MensurContextSetting 'subdivision '(0 . 3) 'implicit '(0 . #t) 'proportio 2))
-  (mensur:override! c (make-music 'EarlyMensuraEvent 'relationships '(1 . 5)))
-  (test-equal "Adds subdivisions." 5 (mensur:subdivision c 1))
-  (test-equal "Removes subdivisions." 2 (mensur:subdivision c 0))
-  (test-equal "Overrides proportio." 1 (mensur:proportio c))
-  (test-equal "Leaves settings intact." #t (mensur:implicit c 0))
-)
-
-#(define (find-post-event music event)
-  "Find post-event attached to music's articulations."
-  (find (lambda (a) (music-is-of-type? a event))
-               (ly:music-property music 'articulations)))
-
-
-#(define %mensur:puncta `(
-  (augmentationis . (
-   (dot-count . ,positive?)
-   (subdivision . 2)
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
-  (perfectionis . (
-   (dot-count . 1)
-   (subdivision . 3)
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
-  (divisionis . (
-   (dot-count . 0)
-   (subdivision . not-null) ;; Mensur context must have at least one complex relationship to allow the use of punctum divisionis.
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
-))
-
-#(define (%mensur:punctum-property punctum-name prop-name)
-  (let ((props (assoc-ref %mensur:puncta punctum-name)))
-   (unless props
-    (ly:error "Unrecognized punctum: ~A" props))
-   (let ((prop (assoc-ref props prop-name)))
-    (unless prop
-     (ly:error "Unrecognized punctum property: ~A" prop-name))
-    prop)))
-
-#(define (%mensur:punctum-validate punctum-name mensur-context dots subdivision)
-  "Check if rhythmic-event properties and context allow for applying punctum."
-  (let ((required-dot-count (%mensur:punctum-property punctum-name 'dot-count))
-        (required-subdivision (%mensur:punctum-property punctum-name 'subdivision)))
-   (when (and (eq? required-subdivision 'not-null)
-              (null? (%mensur-context:relationships mensur-context)))
-    (error "A punctum requiring complex mensuration cannot be used in simple mensuration."))
-   (and (if (procedure? required-dot-count)
-         (required-dot-count dots)
-         (= required-dot-count dots))
-        (if (symbol? required-subdivision)
-         (case required-subdivision
-          ((not-null)
-           (when (null? (%mensur-context:relationships mensur-context))
-            (error "A punctum requiring complex mensuration cannot be used in simple mensuration."))
-           #t)
-          (else
-           (ly:error "Unsupported required-subdivision symbol: ~A" required-subdivision)))
-        (= required-subdivision subdivision)))))
-
-#(define (%mensur:punctum-apply! punctum-name rhythmic-event)
-  "Apply punctum's callback to rhythmic-event. Note: validate first with %mensur:punctum-validate."
-  (let ((apply-callback (%mensur:punctum-property punctum-name 'callback))
-        (punctum (early:punctum rhythmic-event)))
-   (early:punctum-add! rhythmic-event punctum-name)
-   (apply-callback rhythmic-event)))
-
-
-#(define-public (early:punctum music)
-  "Find if event has a punctum and return it's type.
-   If no punctum is present, return `#f`."
-  (let ((punctum (find-post-event music 'early-punctum-event)))
-   (if punctum
-    (ly:music-property punctum 'type)
-    #f)))
-
-#(define-public (early:punctum-add! music punctum-type)
-  (ly:music-set-property! music 'articulations
-   (cons (make-music 'EarlyPunctumEvent 'type punctum-type)
-         (ly:music-property music 'articulations))))
-
-
-% #(define-public (early:punctum-set-augmentationi)
-
-
-
-
 
 #(define-public (mensur:complex? context rhythmic-event)
   "Is duration of `rhythmic-event` complex?"
@@ -430,9 +174,8 @@
         )
    ;; Duration is complex if
    (or (eq? explicit 'complex) ;; it is complex explicitly or implicitly:
-       (and subdivision                       ;; – it's dur-log has complex subdivision
-            (not (= subdivision 2))           ;; – (that is not 2)
-            (not (eq? explicit 'simple))))    ;; – it is not simple...
+       (and (not (= subdivision 2))        ;; – it's dur-log has complex subdivision (that is not 2)
+            (not (eq? explicit 'simple)))) ;; – it is not simple...
 ))
 
 
@@ -467,16 +210,29 @@
        ((simple) factor)
        ((complex) factor)
        ((altera) (* 2 factor))
-       ((partial)
-        (let* ((fraction (mensur:fraction quality))
-               (num (car fraction))
-               (den (cdr fraction)))
-         (* factor (/ num den))))
+       ((partial) (* factor (mensur:fraction quality)))
        (else (ly:error "Unimplemented mensur quality: \"~a\"" quality)))
 
 )))))
 
 
+
+#(define-public (mensur:mensurate-event! rhythmic-event context)
+
+  ;; If dot is present, assume punctum augmentationis or perfectionis.
+
+  ;; Apply punctum's callback to rhythmic-event.
+
+  ;; Update quality based on the ComplexityEvent.
+  ;; They are ignored if mensura is simple. But:
+  ;; – altera is a different and uses parent's subdivision in check
+  ;; – complexity and punctum perfectionis do not stack.
+
+  ;; If mensuration is complex
+  ;; but quality is not given,
+  ;; supplement it.
+
+  ;; Calculate, store and apply factor.
 
 #(define-public (mensur:mensurate-event! context rhythmic-event)
 
@@ -538,6 +294,7 @@
      (else
       (mensur:make-simple! rhythmic-event 'position))))
 
+
    ;; TO DO: supply reason for 'undocumented
    ;; (e.g. similis-ante-similem if the case.)
    ;; Calculate, store and apply factor.
@@ -573,6 +330,6 @@
   (test-equal "Note (simple)." 1/2 (event-length 'NoteEvent 1))
   (test-equal "Note (implicitly simple)." 3/2 (event-length 'NoteEvent 0))
   (test-equal "Note (implicitly complex)." 27/4 (event-length 'NoteEvent -1))
-  (mensur:override! c (make-music 'EarlyMensuraEvent 'relationships '((1 . 3)))) ;; 'prolatio.
+  (mensur:subdivisions! c '((1 . 3)))
   (test-equal "Note (simple itself but with complex subdivisions below." 3/2 (event-length 'NoteEvent 0))
 )
