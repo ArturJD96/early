@@ -12,12 +12,31 @@
 #(define ((nullable pred?) e)
   (or (pred? e) (null? e)))
 
+#(define ((alternative pred1? pred2?) e) ; TO DO: make it generic for any number of preds.
+  (or (pred1? e) (pred2? e)))
+
+#(define (pair-or-alist? e)
+  (or (pair? e) (alist? e)))
+
+#(define (integer-or-procedure? e)
+  (or (integer? e) (procedure? e)))
+
+#(define (integer-or-symbol? e)
+  (or (integer? e) (symbol? e)))
+
+)
+
+#(define (find-post-event music event) ; TO DO: move to utils.
+  "Find post-event attached to music's articulations."
+  (find (lambda (a) (music-is-of-type? a event))
+         (ly:music-property music 'articulations)))
+
 %% Main event constructor procedure.
 
 #(define-public (early:define-constructable-music-event! type description types props . validators)
   "Define a music event together with it's event class.
    Returns a constructor function for this event in a form
-   '(make-_typed_-music val1 val2 val3...)' where arguments
+   '(make-named-event val1 val2 val3...)' where arguments
    are defined in 'validators' alist.
 
    Args:
@@ -93,7 +112,6 @@
    (test-error "Validator throws on wrong type." #t (make-dummy-event 'dummy))
   )
 
-
   (test-group "Old event survives redefinition"
    ;; Exactly the same
    (define make-dummy-event (define-dummy-event))
@@ -104,137 +122,3 @@
 
 #(unless (ly:make-event-class 'early-event)
   (define-event-class 'early-event 'music-event))
-
-% TO DO: move to mensur
-#(unless (ly:make-event-class 'mensur-event)
-  (define-event-class 'mensur-event 'early-event))
-
-% TO DO: move to mensur
-#(define-public early:make-mensur-event ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'EarlyMensuraEvent
-   "An event created when setting a new mensuration. Used in music processed with '\\mensural'."
-   '(mensur-event time-signature-event StreamEvent)
-   ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
-   ;  (elements-callback . ,make-mensura-event))
-   '()
-   ; TO DO: validators
-))
-
-% TO DO: move to mensur
-#(define-public early:make-mensur-music ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'EarlyMensuraMusic
-   "An event created when setting a new mensuration. Used in music processed with '\\mensural'."
-   '(mensur-event time-signature-music StreamEvent)
-   ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
-   ;  (elements-callback . ,make-mensura-event))
-   '()
-   ; TO DO: validators
-))
-
-
-
-
-
-
-
-% START REFACTOR HERE HERE HERE !
-
-% TO DO: remove this notion alltogether?
-#(define-public mensur:make-relationship ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'MensurRelationshipEvent
-   "Mensural-related data of the context."
-   '(mensur-event) '()
-   `(subdivision . ,integer?)
-))
-
-%% TO DO: compare with MensurContextSetting... is it the same thing?
-#(define-public mensur:make-setting ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'MensurSettingEvent
-   "Internal Early mensuration interface settings."
-   '(mensur-event) '()
-   `(implicit . ,(lambda (s) (or (boolean? s) (eq? s 'all))))
-   `(as-tuplet . ,boolean?)
-))
-
-% TO DO: move HERE everything from <mensur:context>.
-#(define-public mensur:make-context ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'MensurContextEvent
-   "All information needed for note mensuration (i.e. duration recalculation)."
-   '(mensur-event)
-   ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
-   ;  (elements-callback . ,make-mensura-event))
-   '()
-   ; TO DO: better validators
-   `(relationships . ,alist?) ;; alist (dur-log . mensur:relationship) ; TO DO: alist OF RELATIONSHIPS
-   `(proportio . ,fraction?) ; TO DO: for now is a NUMBER
-   `(settings . ,alist?) ;; alist (dur-log . mensur:settings)
-))
-
-
-
-
-
-% TO DO: move to 'mensur-context-setting'
-#(define-public early:make-mensur-setting ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'MensurContextSetting
-   "Set a mensuration setting. Used in music processed with '\\mensural'. Mensuration setting are Lilypond and Early features that allow for modification of mensural music doration interpretation (e.g. interpreting a note as made of tuplets). Useful with 'oldschool' transcriptions of medieval music."
-   '(mensur-event StreamEvent) ; included 'time-signature-music' ..?
-   ; ((iterator-ctor . ,ly:sequential-iterator::constructor)
-   ;  (elements-callback . ,make-mensura-event))
-   '()
-   ; TO DO: validators
-))
-
-
-% TO DO: move to 'mensur-punctum-event'
-#(define-public early:make-punctum-event ; TO DO: use & implement
-  (early:define-constructable-music-event!
-   'EarlyPunctumEvent
-   "A point whose semantic function and layout differs vastly among early music editions."
-   '(mensur-event post-event event StreamEvent)
-   '()
-   ; TO DO: validators
-))
-
-
-
-
-
-
-
-
-
-
-
-
-
-%% Left here for future considerations.
-%
-% #(define (make-mensura-event music)
-%   (descend-to-context
-%    (make-apply-context
-%     (lambda (context)
-%      (ly:broadcast (ly:context-event-source context)
-%                    (ly:make-stream-event
-%                     (ly:make-event-class 'early:mensura-event)
-%                     (ly:music-mutable-properties music)))))
-%    'EarlyVoice))
-
-%% Legacy code (still lingering in other definitions files.)
-% #(unless (ly:make-event-class 'early-event)
-%   (define-event-class 'early-event 'music-event)
-%   ;; Legacy...
-%   (define-event-class 'early:mensura-event 'early-event)
-%   (define-event-class 'early:color-minor-sequence 'early-event)
-%   (define-event! 'early:MensuraEvent
-%    '((description . "Used to modify current early:mensura-properties")
-%      ;(iterator-ctor . ,ly:sequential-iterator::constructor)
-%      ;(elements-callback . ,make-mensura-event)
-%      (types . (early:mensura-event time-signature-event StreamEvent)))
-%   ))
