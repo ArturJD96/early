@@ -24,8 +24,6 @@
 #(define (integer-or-symbol? e)
   (or (integer? e) (symbol? e)))
 
-)
-
 #(define (find-post-event music event) ; TO DO: move to utils.
   "Find post-event attached to music's articulations."
   (find (lambda (a) (music-is-of-type? a event))
