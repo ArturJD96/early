@@ -1,7 +1,6 @@
 \version "2.24.4"
 \include "./../testing.ily"
 \include "./mensural.ly"
-\include "./puncta.ly"
 
 
 
@@ -51,9 +50,9 @@
     (let ((music (mensural-music-from-elems signum (ly:music-property music 'elements))))
      (map list
       (extract-duration-lengths music)
-      (map early:punctum (extract-typed-music music 'rhythmic-event))
-      (map (lambda (e) (mensur:quality (ly:music-property e 'mensur:quality))) (extract-typed-music music 'rhythmic-event))
-      (map (lambda (e) (mensur:reason (ly:music-property e 'mensur:quality))) (extract-typed-music music 'rhythmic-event))
+      (map (lambda (e) (punctum:type (early:punctum e))) (extract-typed-music music 'rhythmic-event))
+      (map (lambda (e) (quality:type (ly:music-property e 'mensur:quality))) (extract-typed-music music 'rhythmic-event))
+      (map (lambda (e) (quality:reason (ly:music-property e 'mensur:quality))) (extract-typed-music music 'rhythmic-event))
    )))
 
 %{
@@ -88,8 +87,8 @@
 )
 
 #(testing "early:punctum music"
-  (test-equal 'divisionis (early:punctum #{ d \pdiv #}))
-  (test-equal #f (early:punctum #{ d #}))
+  (test-equal 'divisionis (punctum:type (early:punctum #{ d \pdiv #})))
+  (test-equal #f (punctum:type (early:punctum #{ d #})))
 )
 
 #(testing "Quality."

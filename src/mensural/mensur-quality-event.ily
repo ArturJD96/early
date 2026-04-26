@@ -1,6 +1,9 @@
 \version "2.24.4"
 \include "./../definitions/events.ily" % TO DO: de-centralize and define early:MensurSetting and MensurEvent here?
 
+% TO DO: rename to quality:... etc.
+% TO DO: rename mensur:quality-type to quality:type etc.
+
 % TO DO: consult a good source on definitions of those terms.
 #(define mensur:quality-reasons `(
   ;; Usual case.
@@ -32,22 +35,24 @@
     (qualities . (complex simple partial altera))))
 ))
 
-#(define-public mensur:make-quality
+#(define-public mensur:make-quality-event
   (early:define-constructable-music-event!
    'MensurQualityEvent
    "Note duration is recalculated using \\mensura."
-   '(mensur-event post-event event StreamEvent)
-   '()
-   `(quality . ,(choice '(simple complex partial altera)))
+   '(mensur-event post-event event StreamEvent) '()
+   `(type . ,(choice '(simple complex partial altera)))
    `(reason . ,(choice (map car mensur:quality-reasons)))
    `(fraction . ,(nullable fraction?))
 ))
 
-#(define-public (mensur:quality quality-event) (ly:music-property quality-event 'quality))
-#(define-public (mensur:reason quality-event) (ly:music-property quality-event 'reason))
-#(define-public (mensur:fraction quality-event)
+#(define-public (quality:type quality-event) (ly:music-property quality-event 'type)) % TO DO: rename!
+#(define-public (quality:reason quality-event) (ly:music-property quality-event 'reason))
+#(define-public (quality:fraction quality-event)
   (let ((fraction (ly:music-property quality-event 'fraction)))
    (if (null? fraction) 1 fraction)))
+
+#(define-public (early:quality rhythmic-event)
+  (find-post-event rhythmic-event 'mensur-quality-event))
 
 % Not needed?
 % #(define-public (mensur:music-is-of-quality? rhythmic-event quality-type) ; TO DO: implement!
@@ -61,8 +66,8 @@
   (unless (music-is-of-type? quality 'mensur-quality-event)
    (ly:error "Wrong type of quality. Must be 'mensur-quality-event', is ~A" quality))
 
-  (let* ((quality-type (mensur:quality quality))
-         (reason (mensur:reason quality))
+  (let* ((quality-type (quality:type quality))
+         (reason (quality:reason quality))
          (reason-data (assq-ref mensur:quality-reasons reason)))
 
    (unless reason-data
@@ -78,22 +83,22 @@
 
 #(define-public (mensur:make-simple! rhythmic-event reason)
   (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'simple reason)))
+   (mensur:make-quality-event 'simple reason)))
 
 #(define-public (mensur:make-complex! rhythmic-event reason)
   (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'complex reason)))
+   (mensur:make-quality-event 'complex reason)))
 
 #(define-public (mensur:make-altera! note-event reason)
   (mensur:music-set-quality!
-   (mensur:make-quality 'altera reason)))
+   (mensur:make-quality-event 'altera reason)))
 
 #(define-public (mensur:make-partial! rhythmic-event reason fraction-pair) ;; In scheme, Lilypond's fraction is received as pair.
   (mensur:music-set-quality! rhythmic-event
-   (mensur:make-quality 'partial reason
+   (mensur:make-quality-event 'partial reason
     (/ (car fraction-pair) (cdr fraction-pair)))))
 
-perf = #(define-event-function () () (mensur:make-quality 'complex 'undocumented))
-imp = #(define-event-function () () (mensur:make-quality 'simple 'position))
-part = #(define-event-function (fraction) (fraction?) (mensur:make-quality 'partial 'position fraction))
-altera = #(define-event-function () () (mensur:make-quality 'altera 'position))
+perf = #(define-event-function () () (mensur:make-quality-event 'complex 'undocumented))
+imp = #(define-event-function () () (mensur:make-quality-event 'simple 'position))
+part = #(define-event-function (fraction) (fraction?) (mensur:make-quality-event 'partial 'position fraction))
+altera = #(define-event-function () () (mensur:make-quality-event 'altera 'position))

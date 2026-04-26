@@ -1,63 +1,49 @@
 \version "2.24.4"
 \include "./../definitions/events.ily" % TO DO: de-centralize and define early:MensurSetting and MensurEvent here?
 
-
-
 #(define-public early:make-punctum-event ; TO DO: use & implement
   (early:define-constructable-music-event!
    'EarlyPunctumEvent
    "A point whose semantic function and layout differs vastly among early music editions."
    '(mensur-event post-event event StreamEvent) '()
-   `(dot-count . integer-or-procedure?)
-   `(subdivision . integer-or-symbol?) ; TO DO symbol only: 'not-null, which means: ;; Mensur context must have at least one complex relationship to allow the use of punctum divisionis.
+   `(type . ,symbol?) ; TO DO: only valid punctum name.
+   `(dot-count . ,integer-or-procedure?)
+   `(subdivision . ,integer-or-symbol?) ; TO DO symbol only: 'not-null, which means: ;; Mensur context must have at least one complex relationship to allow the use of punctum divisionis.
    ; `(callback . ,procedure?) ; TO DO: remove it.
 ))
 
-#(define-public (early:make-punctum-augmentationis)
-  (early:make-punctum-event positive? 2))
+#(define-public (punctum:make-augmentationis)
+  (early:make-punctum-event 'augmentationis positive? 2))
 
-#(define-public (early:make-punctum-perfectionis)
-  (early:make-punctum-event 1 3))
+#(define-public (punctum:make-perfectionis)
+  (early:make-punctum-event 'perfectionis 1 3))
 
-#(define-public (early:make-punctum-divisionis)
-  (early:make-punctum-event 0 'not-null)) % TO DO: rename symbol to 'complex-any
+#(define-public (punctum:make-divisionis)
+  (early:make-punctum-event 'divisionis 0 'not-null)) % TO DO: rename symbol to 'complex-any
 
-#(define %mensur:puncta `( ;; TO DO: REMOVE!!!
-  (augmentationis . (
-   (dot-count . ,positive?)
-   (subdivision . 2)
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
-  (perfectionis . (
-   (dot-count . 1)
-   (subdivision . 3)
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
-  (divisionis . (
-   (dot-count . 0)
-   (subdivision . not-null)
-   (callback . ,(lambda (rhythmic-event) rhythmic-event))
-  ))
+#(define early:puncta `(
+  (augmentationis . ,punctum:make-augmentationis)
+  (perfectionis . ,punctum:make-perfectionis)
+  (divisionis . ,punctum:make-divisionis)
 ))
 
+#(define-public (punctum:type punctum)
+  (if punctum (ly:music-property punctum 'type) #f))
 #(define-public (punctum:dot-count punctum)
-  (ly:music-property punctum 'dot-count))
+  (if punctum (ly:music-property punctum 'dot-count) #f))
 #(define-public (punctum:subdivision punctum)
-  (ly:music-property punctum 'subdivision)
+  (if punctum (ly:music-property punctum 'subdivision) #f))
 
-#(define (%mensur:punctum-property punctum-name prop-name)
-  (let ((props (assoc-ref %mensur:puncta punctum-name)))
-   (unless props
-    (ly:error "Unrecognized punctum: ~A" props))
-   (let ((prop (assoc-ref props prop-name)))
-    (unless prop
-     (ly:error "Unrecognized punctum property: ~A" prop-name))
-    prop)))
+#(define-public (punctum:assume subdivision)
+  ((case subdivision
+    ((2) punctum:make-augmentationis)
+    ((3) punctum:make-perfectionis)
+    (else (ly:error "No punctum to assume with note subdivided to ~A parts." subdivision)))))
 
-#(define (%mensur:punctum-validate punctum-name mensur-context dots subdivision)
+#(define (punctum:validate punctum mensur-context dots subdivision)
   "Check if rhythmic-event properties and context allow for applying punctum."
-  (let ((required-dot-count (%mensur:punctum-property punctum-name 'dot-count))
-        (required-subdivision (%mensur:punctum-property punctum-name 'subdivision)))
+  (let ((required-dot-count (punctum:dot-count punctum))
+        (required-subdivision (punctum:subdivision punctum)))
    (when (and (eq? required-subdivision 'not-null)
               (null? (mensur:subdivisions mensur-context)))
     (error "A punctum requiring complex mensuration cannot be used in simple mensuration."))
@@ -74,23 +60,24 @@
            (ly:error "Unsupported required-subdivision symbol: ~A" required-subdivision)))
         (= required-subdivision subdivision)))))
 
-#(define (%mensur:punctum-apply! punctum-name rhythmic-event)
-  "Apply punctum's callback to rhythmic-event. Note: validate first with %mensur:punctum-validate."
-  (let ((apply-callback (%mensur:punctum-property punctum-name 'callback))
-        (punctum (early:punctum rhythmic-event)))
-   (early:punctum-add! rhythmic-event punctum-name)
-   (apply-callback rhythmic-event)))
+
+#(define-public (punctum:append! punctum rhythmic-event)
+  (ly:music-set-property! rhythmic-event 'articulations
+   (cons punctum (ly:music-property rhythmic-event 'articulations)))
+  punctum)
+
+#(define-public (early:punctum rhythmic-event)
+  (find-post-event rhythmic-event 'early-punctum-event))
 
 
-#(define-public (early:punctum music)
-  "Find if event has a punctum and return it's type.
-   If no punctum is present, return `#f`."
-  (let ((punctum (find-post-event music 'early-punctum-event)))
-   (if punctum
-    (ly:music-property punctum 'type)
-    #f)))
+% punctumAugmentationis = #(define-event-function () () (make-music 'EarlyPunctumEvent 'type 'augmentationis))
+% punctumPerfectionis = #(define-event-function () () (make-music 'EarlyPunctumEvent 'type 'perfectionis))
+punctumDivisionis = #(define-event-function () () (punctum:make-divisionis)) % TO DO: can be shallow, just #(punctum:make-divisionis)?
+% %% TO DO: Punctum alterationis affects the last note in a group.
+% punctumAlterationis = #(define-event-function () () (make-music 'EarlyPunctumEvent 'type 'alterationis))
 
-#(define-public (early:punctum-add! music punctum-type)
-  (ly:music-set-property! music 'articulations
-   (cons (make-music 'EarlyPunctumEvent 'type punctum-type)
-         (ly:music-property music 'articulations))))
+%% Aliases
+% paug = \punctumAugmentationis
+% pperf = \punctumPerfectionis
+pdiv = \punctumDivisionis
+% palt = \punctumAlterationis

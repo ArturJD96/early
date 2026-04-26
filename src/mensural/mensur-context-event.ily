@@ -47,13 +47,16 @@
 #(define-public early:make-mensur-setting ; TO DO: use & implement
   (early:define-constructable-music-event!
    'MensurContextSetting ;; rename to MensurContextUpdate?
-   "Used to update a mensuration setting. Used in music processed with '\\mensural'. Mensuration setting are Lilypond and Early features that allow for modification of mensural music doration interpretation (e.g. interpreting a note as made of tuplets). Useful with 'oldschool' transcriptions of medieval music."
-   '(mensur-event StreamEvent) '()
+   "Used to update mensuration context. Used in music processed with '\\mensural'. Mensuration setting are Lilypond and Early features that allow for modification of mensural music doration interpretation (e.g. interpreting a note as made of tuplets). Useful with 'oldschool' transcriptions of medieval music."
+   '(mensur-context-event StreamEvent) '()
    `(subdivision . ,pair-or-alist?) ;; single or many subdivisions.
    `(implicit . ,pair-or-alist?)
    `(as-tuplet . ,pair-or-alist?)
    `(proportio . ,rational?)
 ))
+
+#(define-public early:available-mensur-settings ; TO DO: use it with early:make-mensur-setting
+  '(subdivision implicit as-tuplet proportio))
 
 mensuraExplicit = #(make-music 'MensurContextSetting 'implicit '())
 modusmaiorExplicit = #(make-music 'MensurContextSetting 'implicit '(-3 . #f))

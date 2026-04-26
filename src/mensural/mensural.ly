@@ -2,7 +2,6 @@
 \include "./../definitions/events.ily"
 \include "./mensur.ily"
 \include "./signa.ily"
-\include "./puncta.ly"
 
 #(use-modules (ice-9 copy-tree))
 
@@ -48,7 +47,7 @@ mensural = #(define-music-function (music) (ly:music?)
     (cond
       ; ((music-is-of-type? m 'sequential-music)
       ;  (...)) ;; go further? Do not mensurate if indicated? Turn into modern notation?
-     ((music-is-of-type? m 'mensur-event)
+     ((music-is-of-type? m 'mensur-context-event)
       (case (ly:music-property m 'name) ;; update the mensural context
        ((EarlyMensuraEvent) (mensur:subdivisions! mensur (ly:music-property m 'subdivisions)))
        ((EarlyProportioEvent) (mensur:proportio! mensur (ly:music-property m 'proportio)))
@@ -68,7 +67,6 @@ mensural = #(define-music-function (music) (ly:music?)
 mensura = #(define-music-function (signum) (symbol?)
 
  "Set the mensura of the music."
-
  (early:signum->mensur-event signum)
 
  ;; OLD CODE:
