@@ -3,10 +3,12 @@
 \include "./../testing.ily"
 
 \include "./init-mensur-events.ily"
-\include "./mensur-context-event.ily"
+\include "./mensur-context-event.ily" % rename to 'definition'?
 \include "./mensur-mensura-event.ily"
 \include "./mensur-quality-event.ily"
 \include "./mensur-punctum-event.ily"
+\include "./mensur-quality-definition.ily"
+
 
 
 %{
@@ -222,12 +224,6 @@
 
 #(define-public (mensur:mensurate! rhythmic-event context)
 
-  (punctum:supply! rhythmic-event context)
-
-  punctum:supply
-  – (punctum:assume subdivision)
-  – add assumed point
-
   (let ((punctum (early:punctum rhythmic-event))
         (quality (early:quality rhythmic-event)))
 
@@ -252,9 +248,9 @@
 
   ; TO DO: move to definition.
   (ly:music-set-property! rhythmic-event 'mensur:duration
-   `((declared . ,(ly:music-property rhythmic-event 'duration) ; TO DO: clone it.
+   `((declared . ,(ly:music-property rhythmic-event 'duration)) ; TO DO: clone it.
      (cmn . ,(* (ly:music-property rhythmic-event 'duration) factor)) ; include dots etc.
-     (early . ,(* (ly:music-property rhythmic-event 'duration) factor)))))
+     (early . ,(* (ly:music-property rhythmic-event 'duration) factor))))
 
   ; TO DO: use 'cmn or 'early depending on tags set?
   ; E.g.: "let user render mensural notation as cmn".
