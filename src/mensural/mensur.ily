@@ -179,7 +179,7 @@
             (not (eq? explicit 'simple)))) ;; – it is not simple...
 ))
 
-
+% THIS BECOMES LEGACY SOON and needs refactor
 #(define-public (mensur:factor context rhythmic-event)
 
   (let* ((quality (ly:music-property rhythmic-event 'mensur:quality))
@@ -220,27 +220,51 @@
 
 
 
-% #(define-public (mensur:mensurate! rhythmic-event context)
+#(define-public (mensur:mensurate! rhythmic-event context)
 
-%   (punctum:assume subdivision)
+  (punctum:supply! rhythmic-event context)
 
-%   (ly:music-set-property! rhythmic-event 'mensur:quality
-%    (make-music 'MensurQualityDefinition ; name ?
-%     'quality (mensur:assume-quality punctum quality context)
-%     'reason (mensur:assume-reason punctum quality context)
-%     'factor (mensur:calc-factor this-quality... context)))
+  punctum:supply
+  – (punctum:assume subdivision)
+  – add assumed point
 
-%   (ly:music-set-property! rhythmic-event 'mensur:duration
-%    `((declared . ,(ly:music-property rhythmic-event 'duration) ; TO DO: clone it.
-%      (cmn . ,(* (ly:music-property rhythmic-event 'duration) factor)) ; include dots etc.
-%      (early . ,(* (ly:music-property rhythmic-event 'duration) factor)))))
+  (let ((punctum (early:punctum rhythmic-event))
+        (quality (early:quality rhythmic-event)))
 
-%   (ly:music-set-property! rhythmic-event 'duration
-%    (assq-ref ' (ly:music-property rhythmic-event 'mensur:duration) 'early))
+   (when (and quality (quality:valid? quality rhythmic-event context))
+    (mensur:quality! rhythmic-event
+     (mensur:make-quality (quality:type quality) (quality:reason quality))))
 
-% )
+   (unless punctum
+    (set! punctum
+     (punctum:assume! rhythmic-event context)))
+
+   (when (and punctum
+              (punctum:valid? punctum rhythmic-event context)
+              (eq? (punctum:type 'perfectionis)))
+    (if (mensur:quality rhythmic-event)
+     (mensur:reason! rhythmic-event 'punctum-perfectionis)
+     (mensur:quality! rhythmic-event
+      (mensur:make-quality 'complex 'punctum-perfectionis))))
+  )
+
+  (mensur:factor! (mensur:calc-factor context rhythmic-event))
+
+  ; TO DO: move to definition.
+  (ly:music-set-property! rhythmic-event 'mensur:duration
+   `((declared . ,(ly:music-property rhythmic-event 'duration) ; TO DO: clone it.
+     (cmn . ,(* (ly:music-property rhythmic-event 'duration) factor)) ; include dots etc.
+     (early . ,(* (ly:music-property rhythmic-event 'duration) factor)))))
+
+  ; TO DO: use 'cmn or 'early depending on tags set?
+  ; E.g.: "let user render mensural notation as cmn".
+  (ly:music-set-property! rhythmic-event 'duration
+   (assq-ref ' (ly:music-property rhythmic-event 'mensur:duration) 'early))
+
+)
 
 
+% THIS BECOMES LEGACY SOON
 #(define-public (mensur:mensurate-event! context rhythmic-event)
 
   (let* ((dur (ly:music-property rhythmic-event 'duration))

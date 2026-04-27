@@ -1,0 +1,22 @@
+  if (articulation) quality: % set directly by user.
+    – consult context if is valid
+    – turn to (mensur) quality
+    – (but don't calculate factor yet).
+
+  if no punctum: look for one.
+
+  if (articulation) punctum: % set directly by user.
+    – consult context if punctum is valid
+    – if punctum = perfectionis: check (mensur) quality:
+        – if no quality: make it.
+        % moved to validation:
+        % – if quality already complex (so forced by user): ERROR
+        % – if quality simple (so forced by user): ERROR
+        % – if quality other: ERROR
+
+  if (mensur) quality: % this property is never set directly by user.
+    – consult context if quality is valid
+  else not quality:
+    – consult context (for quality and reason)
+
+  quality: calc factor
