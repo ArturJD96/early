@@ -34,11 +34,13 @@
 #(define-public (punctum:subdivision punctum)
   (if punctum (ly:music-property punctum 'subdivision) #f))
 
-#(define-public (punctum:assume subdivision)
-  ((case subdivision
-    ((2) punctum:make-augmentationis)
-    ((3) punctum:make-perfectionis)
-    (else (ly:error "No punctum to assume with note subdivided to ~A parts." subdivision)))))
+#(define-public (punctum:assume! rhythmic-event context)
+  (punctum:append!
+   ((case (mensur:subdivision context (ly:duration-log (ly:music-property rhythmic-event 'duration)))
+     ((2) punctum:make-augmentationis)
+     ((3) punctum:make-perfectionis)
+     (else (ly:error "No punctum to assume with note subdivided to ~A parts." subdivision))))
+   rhythmic-event))
 
 #(define (punctum:validate punctum mensur-context dots subdivision)
   "Check if rhythmic-event properties and context allow for applying punctum."

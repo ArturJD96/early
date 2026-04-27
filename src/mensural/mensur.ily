@@ -222,8 +222,18 @@
 
 
 
-#(define-public (mensur:mensurate! rhythmic-event context)
+#(define-public (mensur:mensurate-event! context rhythmic-event)
 
+  ; TO DO: put to respective places
+  (define (quality:valid? quality rhythmic-event context) #t) ; TO DO: finish
+  (define (punctum:valid? punctum rhythmic-event context) #t) ; TO DO: finish
+  (define (mensur:calc-factor context rhythmic-event) 1) ; TO DO: finish
+  (define (mensur:reason! rhythmic-event fraction) 'undocumented) ; TO DO: finish
+  (define (mensur:fraction rhythmic-event) 1) ; TO DO: finish
+  (define (mensur:fraction! rhythmic-event fraction) 1) ; TO DO: finish
+
+
+  ; TO DO: code starts
   (let ((punctum (early:punctum rhythmic-event))
         (quality (early:quality rhythmic-event)))
 
@@ -237,108 +247,110 @@
 
    (when (and punctum
               (punctum:valid? punctum rhythmic-event context)
-              (eq? (punctum:type 'perfectionis)))
+              (eq? (punctum:type punctum) 'perfectionis))
     (if (mensur:quality rhythmic-event)
      (mensur:reason! rhythmic-event 'punctum-perfectionis)
      (mensur:quality! rhythmic-event
       (mensur:make-quality 'complex 'punctum-perfectionis))))
   )
 
-  (mensur:factor! (mensur:calc-factor context rhythmic-event))
+  (mensur:fraction! rhythmic-event (mensur:calc-factor context rhythmic-event))
 
   ; TO DO: move to definition.
   (ly:music-set-property! rhythmic-event 'mensur:duration
    `((declared . ,(ly:music-property rhythmic-event 'duration)) ; TO DO: clone it.
-     (cmn . ,(* (ly:music-property rhythmic-event 'duration) factor)) ; include dots etc.
-     (early . ,(* (ly:music-property rhythmic-event 'duration) factor))))
+     (cmn . ,(* (ly:music-property rhythmic-event 'duration) (mensur:fraction rhythmic-event))) ; include dots etc.
+     (early . ,(* (ly:music-property rhythmic-event 'duration) (mensur:fraction rhythmic-event)))))
 
   ; TO DO: use 'cmn or 'early depending on tags set?
   ; E.g.: "let user render mensural notation as cmn".
   (ly:music-set-property! rhythmic-event 'duration
-   (assq-ref ' (ly:music-property rhythmic-event 'mensur:duration) 'early))
+   (assq-ref (ly:music-property rhythmic-event 'mensur:duration) 'early))
+
+  rhythmic-event
 
 )
 
 
-% THIS BECOMES LEGACY SOON
-#(define-public (mensur:mensurate-event! context rhythmic-event)
+% % THIS BECOMES LEGACY SOON
+% #(define-public (mensur:mensurate-event! context rhythmic-event)
 
-  (let* ((dur (ly:music-property rhythmic-event 'duration))
-         (dur-log (ly:duration-log dur))
-         (dots (ly:duration-dot-count dur))
-         (quality (early:quality rhythmic-event))
-         (punctum (early:punctum rhythmic-event))
-         (subdivision (or (mensur:subdivision context dur-log) 2))
-         (subdivision-parent (or (mensur:subdivision context (1- dur-log)) 2))
-         (implicit (mensur:implicit context dur-log))
-        )
+%   (let* ((dur (ly:music-property rhythmic-event 'duration))
+%          (dur-log (ly:duration-log dur))
+%          (dots (ly:duration-dot-count dur))
+%          (quality (early:quality rhythmic-event))
+%          (punctum (early:punctum rhythmic-event))
+%          (subdivision (or (mensur:subdivision context dur-log) 2))
+%          (subdivision-parent (or (mensur:subdivision context (1- dur-log)) 2))
+%          (implicit (mensur:implicit context dur-log))
+%         )
 
-   ; Some features are only for complex, some for simple.
-   ; Maybe filter those features first and only then compare?
-   ;; If dot is present but punctum is absent,
-   ;; assume punctum augmentationis or perfectionis.
-   ; TO DO: move to punctum:assume
-   (unless (early:punctum rhythmic-event)
-    (when (> dots 0)
-     (set! punctum (punctum:append! (punctum:assume subdivision) rhythmic-event))
-    ))
-
-
-   ;; Validate if note has correct punctum.
-   (when (early:punctum rhythmic-event)
-    (punctum:validate (early:punctum rhythmic-event) context dots subdivision))
-
-   ;; Update quality based on the ComplexityEvent.
-   ;; They are ignored if mensura is simple. But:
-   ;; – altera is a different and uses parent's subdivision in check
-   ;; – complexity and punctum perfectionis do not stack.
-   (when quality
-    (let ((type (quality:type quality)))
-     (cond
-      ((and (eq? type 'altera)
-            (not (= subdivision-parent 2)))
-       (mensur:music-set-quality! rhythmic-event quality))
-      ((and (eq? (punctum:type punctum) 'perfectionis)
-            (eq? type 'partial))
-       (error "Cannot stack together puncumt perfectionis and partial imperfection."))
-      ((and (not (eq? (punctum:type punctum) 'perfectionis))
-            (not (= subdivision 2)))
-       (mensur:music-set-quality! rhythmic-event quality)))))
-
-   ;; If mensuration is complex
-   ;; but quality is not given,
-   ;; supplement it.
-   (when (null? (ly:music-property rhythmic-event 'mensur:quality))
-    (cond
-     ((= subdivision 2)
-      (mensur:make-simple! rhythmic-event 'simple-mensur)) ;; Isn't this redundant?
-     ((music-is-of-type? rhythmic-event 'rest-event)
-      (mensur:make-complex! rhythmic-event 'rest))
-     ((eq? (punctum:type punctum) 'perfectionis)
-      (mensur:make-complex! rhythmic-event 'punctum-perfectionis))
-     (implicit ;; HACK: if symbol 'all is returned, it evaluates always to #t.
-      ; TO DO: check it twice...
-      (mensur:make-complex! rhythmic-event 'position))
-     (else
-      (mensur:make-simple! rhythmic-event 'position))))
+%    ; Some features are only for complex, some for simple.
+%    ; Maybe filter those features first and only then compare?
+%    ;; If dot is present but punctum is absent,
+%    ;; assume punctum augmentationis or perfectionis.
+%    ; TO DO: move to punctum:assume
+%    (unless (early:punctum rhythmic-event)
+%     (when (> dots 0)
+%      (set! punctum (punctum:append! (punctum:assume subdivision) rhythmic-event))
+%     ))
 
 
-   ;; TO DO: supply reason for 'undocumented
-   ;; (e.g. similis-ante-similem if the case.)
-   ;; Calculate, store and apply factor.
-   (let ((factor (mensur:factor context rhythmic-event)))
-    ;; Store data.
-    (ly:music-set-property! rhythmic-event 'mensur:factor factor)
-    (ly:music-set-property! rhythmic-event 'mensur:duration-original dur)
-    ;; Take care of dot.
-    ; (if (ly:duration-dot-count dur)
-    ;; UPDATE duration!
-    (ly:music-set-property! rhythmic-event 'duration (ly:duration-compress dur factor))
-    ;; Return updated value.
-    rhythmic-event
-   )
+%    ;; Validate if note has correct punctum.
+%    (when (early:punctum rhythmic-event)
+%     (punctum:validate (early:punctum rhythmic-event) context dots subdivision))
 
-))
+%    ;; Update quality based on the ComplexityEvent.
+%    ;; They are ignored if mensura is simple. But:
+%    ;; – altera is a different and uses parent's subdivision in check
+%    ;; – complexity and punctum perfectionis do not stack.
+%    (when quality
+%     (let ((type (quality:type quality)))
+%      (cond
+%       ((and (eq? type 'altera)
+%             (not (= subdivision-parent 2)))
+%        (mensur:music-set-quality! rhythmic-event quality))
+%       ((and (eq? (punctum:type punctum) 'perfectionis)
+%             (eq? type 'partial))
+%        (error "Cannot stack together puncumt perfectionis and partial imperfection."))
+%       ((and (not (eq? (punctum:type punctum) 'perfectionis))
+%             (not (= subdivision 2)))
+%        (mensur:music-set-quality! rhythmic-event quality)))))
+
+%    ;; If mensuration is complex
+%    ;; but quality is not given,
+%    ;; supplement it.
+%    (when (null? (ly:music-property rhythmic-event 'mensur:quality))
+%     (cond
+%      ((= subdivision 2)
+%       (mensur:make-simple! rhythmic-event 'simple-mensur)) ;; Isn't this redundant?
+%      ((music-is-of-type? rhythmic-event 'rest-event)
+%       (mensur:make-complex! rhythmic-event 'rest))
+%      ((eq? (punctum:type punctum) 'perfectionis)
+%       (mensur:make-complex! rhythmic-event 'punctum-perfectionis))
+%      (implicit ;; HACK: if symbol 'all is returned, it evaluates always to #t.
+%       ; TO DO: check it twice...
+%       (mensur:make-complex! rhythmic-event 'position))
+%      (else
+%       (mensur:make-simple! rhythmic-event 'position))))
+
+
+%    ;; TO DO: supply reason for 'undocumented
+%    ;; (e.g. similis-ante-similem if the case.)
+%    ;; Calculate, store and apply factor.
+%    (let ((factor (mensur:factor context rhythmic-event)))
+%     ;; Store data.
+%     (ly:music-set-property! rhythmic-event 'mensur:factor factor)
+%     (ly:music-set-property! rhythmic-event 'mensur:duration-original dur)
+%     ;; Take care of dot.
+%     ; (if (ly:duration-dot-count dur)
+%     ;; UPDATE duration!
+%     (ly:music-set-property! rhythmic-event 'duration (ly:duration-compress dur factor))
+%     ;; Return updated value.
+%     rhythmic-event
+%    )
+
+% ))
 
 
 #(testing "Mensurate"
