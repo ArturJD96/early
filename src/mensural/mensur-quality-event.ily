@@ -10,7 +10,7 @@
   (simple-mensur .
    ((description . "Mensura is duplex so complex mensuration does not apply")
     (event . rhythmic-event)
-    (qualities . (simple))))
+    (qualities . (simple)))) ; TO DO: rename to 'types'
   ;; Reasons for complex.
   (rest .
    ((description . "Rest in mensural music is compulsory complex in complex meters.")
@@ -51,5 +51,6 @@
   (let ((fraction (ly:music-property quality-event 'fraction)))
    (if (null? fraction) 1 fraction)))
 
+   %;; Returns #f if point is not found.
 #(define-public (early:quality rhythmic-event) ; TO DO: rename to mensur:quality
   (find-post-event rhythmic-event 'mensur-quality-event))

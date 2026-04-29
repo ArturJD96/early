@@ -56,9 +56,6 @@ altera = #(define-event-function () () (mensur:make-quality-event 'altera 'posit
 
 
 
-
-
-
 % This is MORE actual code now:
 %
 % Quality definition is internal.
@@ -74,15 +71,49 @@ altera = #(define-event-function () () (mensur:make-quality-event 'altera 'posit
    `(fraction . ,(nullable fraction?))
 ))
 
-#(define-public (mensur:type quality-definition)
+% TO DO: setter's wrong type capture.
+% TO DO: compare quality type compatibility with reason based on quality:reasons.
+
+#(define-public (quality:type quality-definition)
   (ly:music-property quality-definition 'type))
+#(define-public (quality:type! quality-definition type)
+  (ly:music-set-property! quality-definition 'type type))
+
 #(define-public (quality:reason quality-definition)
   (ly:music-property quality-definition 'reason))
+#(define-public (quality:reason! quality-definition reason)
+  (ly:music-set-property! quality-definition 'reason reason))
+
 #(define-public (quality:fraction quality-definition)
   (let ((fraction (ly:music-property quality-definition 'fraction))) ; TO DO: pair satisfying (fraction?) or real fraction?
    (if (null? fraction) 1 fraction)))
+
+% TO DO: are those setters safe?
+
+%% Top-level accessors and setters.
 
 #(define-public (mensur:quality rhythmic-event)
   (ly:music-property rhythmic-event 'mensur:quality))
 #(define-public (mensur:quality! rhythmic-event quality-definition)
   (ly:music-set-property! rhythmic-event 'mensur:quality quality-definition))
+
+#(define-public (mensur:type rhythmic-event)
+  (ly:music-property (mensur:quality rhythmic-event) 'type))
+#(define-public (mensur:type! rhythmic-event type)
+  (mensur:quality! rhythmic-event
+   (quality:type! (mensur:quality rhythmic-event)
+    type)))
+
+#(define-public (mensur:reason rhythmic-event)
+  (ly:music-property (mensur:quality rhythmic-event) 'reason))
+#(define-public (mensur:reason! rhythmic-event reason)
+  (mensur:quality! rhythmic-event
+   (quality:reason! (mensur:quality rhythmic-event)
+    reason)))
+
+#(define-public (mensur:fraction rhythmic-event)
+  (ly:music-property (mensur:quality rhythmic-event) 'fraction))
+#(define-public (mensur:fraction! rhythmic-event fraction)
+  (mensur:quality! rhythmic-event
+   (quality:fraction! (mensur:quality rhythmic-event)
+    fraction)))

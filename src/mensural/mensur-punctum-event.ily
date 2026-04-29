@@ -68,7 +68,7 @@
    (cons punctum (ly:music-property rhythmic-event 'articulations)))
   punctum)
 
-#(define-public (early:punctum rhythmic-event)
+#(define-public (early:punctum rhythmic-event) ;; Returns #f if point is not found.
   (find-post-event rhythmic-event 'early-punctum-event))
 
 

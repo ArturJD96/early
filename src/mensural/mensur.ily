@@ -224,34 +224,57 @@
 
 #(define-public (mensur:mensurate-event! context rhythmic-event)
 
-  ; TO DO: put to respective places
-  (define (quality:valid? quality rhythmic-event context) #t) ; TO DO: finish
-  (define (punctum:valid? punctum rhythmic-event context) #t) ; TO DO: finish
-  (define (mensur:calc-factor context rhythmic-event) 1) ; TO DO: finish
-  (define (mensur:reason! rhythmic-event fraction) 'undocumented) ; TO DO: finish
-  (define (mensur:fraction rhythmic-event) 1) ; TO DO: finish
-  (define (mensur:fraction! rhythmic-event fraction) 1) ; TO DO: finish
+  ; START HERE !!!
 
+  ; TO DO: put to respective places
+  ; TO DO: finish
+  (define (punctum:assume! rhythmic-event context) ;; rename to mensur:assume-punctum!
+   (let* ((dur (ly:music-property rhythmic-event 'duration))
+          (log (ly:duration-log dur))
+          (dots (ly:duration-dot-count dur)))
+    (case dots
+     ((0) #f)
+     ((1)
+      (punctum:append!
+       ((case (mensur:subdivision context (ly:duration-log (ly:music-property rhythmic-event 'duration)))
+        ((2) punctum:make-augmentationis)
+        ((3) punctum:make-perfectionis)
+        (else (ly:error "No punctum to assume with note subdivided to ~A parts." subdivision))))
+      rhythmic-event))
+     (else (ly:error "Too many dots (~A), only 1 allowed." dots)))))
+
+
+  (define (quality:assume! rhythmic-event context) ;; rename to mensur:assume-punctum!
+   (let* ((log (ly:duration-log (ly:music-property rhythmic-event 'duration)))
+          (subdivision (mensur:subdivision context log))
+          ; (subdivision-parent (mensur:subdivision (context (-1 log))))
+          (implicit (mensur:implicit context log)))
+   (cond
+    ((= subdivision 2)
+     (mensur:make-quality 'simple 'simple-mensur))
+    ((music-is-of-type? rhythmic-event 'rest)
+     (mensur:make-quality 'complex 'rest))
+    ((eq? (punctum:type rhythmic-event) 'perfectionis)
+     (mensur:make-quality 'complex 'punctum-perfectionis))
+    ((implicit)
+     (mensur:make-quality 'complex 'position))
+    (else
+     (mensur:make-simple! rhythmic-event 'position)))))
+
+  (define (punctum:valid? punctum rhythmic-event context) #t) ; TO DO: finish ; TO DO: rename mensur:validate-punctum
+  (define (quality:valid? punctum rhythmic-event context) #t) ; TO DO: finish ; TO DO: rename mensur:validate-punctum
+  (define (mensur:calc-factor context rhythmic-event) 1) ; TO DO: finish
 
   ; TO DO: code starts
-  (let ((punctum (early:punctum rhythmic-event))
-        (quality (early:quality rhythmic-event)))
+  (let ((punctum (or (early:punctum rhythmic-event)
+                     (punctum:assume! rhythmic-event context)))
+        (quality (or (early:quality rhythmic-event)
+                     (quality:assume! rhythmic-event)))) ;; here, handle punctum perfectionis
 
-   (when (and quality (quality:valid? quality rhythmic-event context))
-    (mensur:quality! rhythmic-event
-     (mensur:make-quality (quality:type quality) (quality:reason quality))))
-
-   (unless punctum
-    (set! punctum
-     (punctum:assume! rhythmic-event context)))
-
-   (when (and punctum
-              (punctum:valid? punctum rhythmic-event context)
-              (eq? (punctum:type punctum) 'perfectionis))
-    (if (mensur:quality rhythmic-event)
-     (mensur:reason! rhythmic-event 'punctum-perfectionis)
-     (mensur:quality! rhythmic-event
-      (mensur:make-quality 'complex 'punctum-perfectionis))))
+   (quality:valid? quality rhythmic-event context)
+   (mensur:quality! rhythmic-event
+    (mensur:make-quality (quality:type quality) (quality:reason quality)))
+   (when punctum (punctum:valid? punctum rhythmic-event context))
   )
 
   (mensur:fraction! rhythmic-event (mensur:calc-factor context rhythmic-event))
