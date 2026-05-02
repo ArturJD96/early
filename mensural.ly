@@ -4,6 +4,45 @@
 \include "src/definitions/events.ily"
 \include "src/definitions/mensurations.ily"
 
+
+% Legacy code (still lingering in other definitions files.)
+% %% Left here for future considerations.
+%
+% #(define (make-mensura-event music)
+%   (descend-to-context
+%    (make-apply-context
+%     (lambda (context)
+%      (ly:broadcast (ly:context-event-source context)
+%                    (ly:make-stream-event
+%                     (ly:make-event-class 'early:mensura-event)
+%                     (ly:music-mutable-properties music)))))
+%    'EarlyVoice))
+#(define (define-event! type properties)
+   (set-object-property! type
+                         'music-description
+                         (cdr (assq 'description properties)))
+   (set! properties (assoc-set! properties 'name type))
+   (set! properties (assq-remove! properties 'description))
+   (hashq-set! music-name-to-property-table type properties)
+   (set! music-descriptions
+         (sort (cons (cons type properties)
+                     music-descriptions)
+               alist<?)))
+#(unless (ly:make-event-class 'early:mensura-event)
+  ; (define-event-class 'early-event 'music-event)
+  ;; Legacy...
+  (define-event-class 'early:mensura-event 'early-event)
+  (define-event-class 'early:color-minor-sequence 'early-event)
+  (define-event! 'early:MensuraEvent
+   '((description . "Used to modify current early:mensura-properties")
+     ;(iterator-ctor . ,ly:sequential-iterator::constructor)
+     ;(elements-callback . ,make-mensura-event)
+     (types . (early:mensura-event time-signature-event StreamEvent)))
+  ))
+
+
+
+
 #(define (early:get-default-mensura-properties)
     ;; default public properties
   '((blackmensural . #f)
