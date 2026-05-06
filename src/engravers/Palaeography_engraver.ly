@@ -77,6 +77,29 @@ Args:
    )
 ))
 
+#(define (substitution-all str-old)
+  (define-substitution
+   `(,str-old)
+   (lambda (str-new)
+    (lambda (match-obj) str-new)
+   )
+))
+
+#(define (substitution-initial str-old)
+"This procedure substitutes all 'str-old' when they are the last letter."
+  (define-substitution
+   `("$" ,str-old) ;; weird hack with ~not~ escaping ']' character?
+   (lambda (str-new)
+    (lambda (match-obj)
+     (let ((next (match:substring match-obj 1)))
+      ; (display str-new)(newline)
+      (if (not (string=? "" next))
+       (string-append str-new next)
+       str-new
+      )
+ ))))
+)
+
 #(define (substitution-last str-old)
 "This procedure substitutes all 'str-old' when they are the last letter."
   (define-substitution
@@ -181,17 +204,18 @@ Args:
   (allographs . (
    ; (i-dotless . ("i" . "i*"))
    ; (i-helper-dot . ("[mnuwv]i[mnuwv]" . "[mnuwv]i[mnuwv]"))
-   (m-final . ((auto . ,(substitution-last "m"))))
+   (m-final . ( (auto . ,(substitution-last "m")) ))
    ; (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
-   (s-long . ((auto . ,(substitution-except-last "s")) ))
+   (s-long . ( (auto . ,(substitution-except-last "s")) ))
               ; (always . ,(substitution "s"))
               ; (indicated . ,(substitution-escaped "s")))) ;; adds \\*
 
-   ; (v-as-u . ("v" . "v"))
+   (v-as-u . ( (auto . ,(substitution-all "v")) ))
+   (i-initial-capitalised . ( (auto . ,(substitution-initial "i")) ))
   ))
   (ligatures .  (
    ; (nasals . ("[aeiou][mn]" . "[aeiou][mn]"))
-   ; (us-final . ("us[\\.,:;\\?!]?$" . "us[\\.,:;\\?!]?$"))
+   (us-final . ( (indicated . ,(substitution-last "u\\*s")) ))  ;("us[\\.,:;\\?!]?$" . "us[\\.,:;\\?!]?$"))
   ))
 ))
 
@@ -200,7 +224,7 @@ Args:
 
 #(define-public early:supported-fonts '(
 
-  ("__unicode__" . (
+  ("__unicode__" . ( ;; Debug purposes.
    (i-dotless . "ı")
    (i-helper-dot . "i")
    (m-final . "ɜ")
@@ -210,6 +234,7 @@ Args:
    (us-final . "⁹")
    (abbreviation . "~") ;; added to the middle letter of a custom abbreviation..? A hook?
   ))
+  ;; Palaeography fonts by JUAN-JOSÉ MARCOS (https://www.typofonts.com/palefont.html)
   ("Gothica Rotunda" . (
    (i-dotless . "ı")
    (i-helper-dot . "i")
@@ -218,6 +243,12 @@ Args:
    (s-long . "ſ")
    (v-as-u . "u")
    (nasals . "~") ; "append to letter" hook? OR a dictionary?
+   (us-final . "")
+  ))
+  ("Gothica Bastarda" . (
+   (s-long . "$")
+   (v-as-u . "u")
+   (i-initial-capitalised . "I")
    (us-final . "")
   ))
 
@@ -255,43 +286,44 @@ Args:
     ((lyric-syllable-interface engraver grob source)
      (let* ((unicode (ly:context-property context 'early-font-pure-unicode))
             (font-config (ly:context-property context 'early-font-config))
-            (allographs (ly:context-property context 'early-font-allographs))
-            (ligatures (ly:context-property context 'early-font-ligatures)) ;; merge it?
+            (context-allographs (ly:context-property context 'early-font-allographs))
+            (context-ligatures (ly:context-property context 'early-font-ligatures))
+            (context-rules (fold-right cons context-ligatures context-allographs))
+            ;; font config
+            (allographs (if (assq-ref font-config 'allographs) (assq-ref early:spelling-rules 'allographs) '()))
+            (ligatures (if (assq-ref font-config 'ligatures) (assq-ref early:spelling-rules 'ligatures) '()))
+            (rules (fold-right cons ligatures allographs))
             ;; from grob.
             (text (ly:grob-property grob 'text))
             (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
             (glyphs (assoc-ref early:supported-fonts font))
            )
 
-      (when (assq-ref font-config 'allographs)
-       (for-each
-        (lambda (kv)
-         (let* ((spelling-rule (car kv))
-                (rule-mode (cdr kv))
-                (allographs (assq-ref early:spelling-rules 'allographs))
-                (substitution (assq-ref (assq-ref allographs spelling-rule) rule-mode)) ;; or 'ligatures'
-                (glyph (assq-ref glyphs spelling-rule))
-               )
+      (for-each
+       (lambda (context-rule)
+        (let* ((rule-name (car context-rule))
+               (rule-mode (cdr context-rule))
+               ;; font config
+               (substitution (assq-ref (assq-ref rules rule-name) rule-mode))
+               (glyph (assq-ref glyphs rule-name))
+              )
 
           (when (not glyph)
            (unless palaeography:supress-warnings
-            (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" spelling-rule font)))
+            (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" rule-name font)))
            (set! glyph "[~?~]")
           )
 
           (when (not substitution)
            (unless palaeography:supress-warnings
-            (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" spelling-rule font)))
+            (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" rule-name font)))
            (set! substitution (substitution-dummy glyph))
           )
 
           (set! text (substitution text glyph (is-last-syllable grob)))
 
-        ))
-        allographs)
-      )
-
-      (when (assq-ref font-config 'ligatures) '()) ;; Split between allographs and ligatures should be deprecated.
+      ))
+      context-rules)
 
       ;; Finally, remove all the remaining asterisks
       ;; (unless they are escaped by "\\" <--- TO DO!)
