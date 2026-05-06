@@ -52,7 +52,7 @@
         %% Grob properties
         \override NoteHead.stencil = #early:note-head::print
         \override Flag.stencil = #old-straight-flag
-        \override Stem.neutral-direction = #UP
+        \override Stem.neutral-direction = #UP % TO DO: allow for specifying when stems flip. Sometimes they flip only from 4th line, e.g. first systems of ILVB 158.
 
     }
 
@@ -75,7 +75,7 @@
 	       (1/2 . "accidentals.mensural1"))
 
         \override TimeSignature.style = #'mensural
-        \override LedgerLineSpanner.stencil = ##f
+        % \override LedgerLineSpanner.stencil = ##f
         \override StaffSymbol.stencil = #(early-staff delicate-jagged-line)
 
     }
