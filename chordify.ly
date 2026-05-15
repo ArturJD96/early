@@ -4,76 +4,61 @@
 
 #(define (logn base x)
   (let ((result (/ (log10 x) (log10 base))))
-   (if (integer? result)
-    (inexact->exact result)
-    result)))
+   result))
 
-#(define (moment->duration mom)
-  "Based on the moment's length calculate
-  negative dur-log, number of dots and scale factor
-  that can be passed as args to ly:make-duration.
+#(define (log2 x) (logn 2 x))
 
-  This is complicated because we have three variables
-  building a duration in temporal steps and using notation's idioms.
 
-  I realized that moment is a function of duration such as:
-  Mom(negdurlog, dots, factor) = factor * 2^negdurlog * sum(1/(2^i), 0<=i<=d).
+#(define (length->durations len)
+  "Return list of (incrementally smaller) durations
+   that sum up to the duration length len."
 
-  I procede by realizing that analyzing moment's:
-  * denominator: what part of it can be described as 2^n (from note's rhythmical division);
-  * numerator: what part of it can be described as 3^n (from dot multiplying by 3/2).
-  ...and finding *remainder values* from which I can calculate the factor.
+   ; TO DO: duration 'factor' NOT taken into account!
+   ; ...maybe pass it as a separate argument?
+   ; ...or pass the whole mensural context to calculate it within it?
 
-  I find first a 'basic moment':
-  bmom = Mom(ndl, d, 1) such as Mom(ndl, d, f) = bmom + brem
+  (define (next-durlog dur)
+   (+ (ly:duration-log dur)
+      (ly:duration-dot-count dur)
+      1))
 
-  Then, I find the 'dotted moment':
-  dmom = 2^negdurlog * sum(1/(2^i), 0<=i<=d) + drem
+  (define (add-dot dur)
+   (ly:make-duration
+    (ly:duration-log dur)
+    (1+ (ly:duration-dot-count dur))
+    (ly:duration-scale dur)))
 
-  This usually holds:
-  Mom = dot0 + (dot1 + dot2 + dot3) + drem + brem,
+  (let loop ((durs '()) ;; Negative dur-logs.
+             (len len)) ;; Remaining duration length to turn to durations.
+   (let* ((ndl (- (inexact->exact (floor (log2 len)))))
+          (rem (- len (expt 1/2 ndl))))
+    (cond
+     ((null? durs)
+      (loop (cons (ly:make-duration ndl) durs) rem))
+     ((= ndl (next-durlog (car durs)))
+      (loop (cons (add-dot (car durs)) (cdr durs)) rem))
+     ((= rem 0)
+      (reverse (cons (ly:make-duration ndl) durs)))
+     ((>= ndl 7) ; Value is smaller than 128th note.
+      (reverse (cons (ly:make-duration 7 0 (* rem (expt 2 ndl))) durs)))
+     (else (loop (cons (ly:make-duration ndl) durs) rem)))
+)))
 
-  Factor is finally calculated as:
-  f = dmom / mom (where mom = dmom + brem + drem)
 
-  BEWARE: the amount of dots can be manipulated, so there are less dots but bigger residuals!
-  For example: (1 1 1) <=> (1 0 3/2)
+#(testing "length-durations"
 
-  TO DO: mensural flavour, where negdurlog becomes a product of note's complexities...
-  "
-  (let* ((mom (if (ly:moment? mom) (ly:moment-main mom) mom))
-         (num (numerator mom))
-         (denom (denominator mom))
-         ;; Base moment.
-         (n (let base ((d 1)) ;; Highest n such as 2^d < denom.
-             (let ((d-new (* d 2)))
-              (if (> d-new denom) d (base d-new)))))
-         (bmom (/ (floor-quotient (* num n) denom) n))
-         (brem (/ (floor-remainder (* num n) denom) (* denom n)))
-         ;; Dots = log2(n+1)-1
-         (dn (let base ((d 1)) ;; Highest dn such as 3^d < bmom's num (we need to know how many dots are there. HINT: a dot triples the numerator!).
-              (let ((d-new (* d 3)))
-               (if (> d-new (numerator bmom)) d (base d-new)))))
-         (dmom (/ dn n)) ;; Dots are here.
-         (drem (- bmom dmom)) ;; Remainder besides dots.
-         (dots (logn 3 (numerator dmom))) ;; When we add a dot, we multiply by '3/2'. Thus, we need to retrieve information how many times we multiplied by 3/2.
-         ;; Results.
-         (negdurlog  (- (logn 2 (/ dmom (/ (- (expt 2 (+ dots 1)) 1) (expt 2 dots))))))
-         (factor (/ dmom mom))
-         (duration (ly:make-duration negdurlog dots factor))
-        )
+  (define durs
+   (list (ly:make-duration -2 2) ;; \longa..
+         (ly:make-duration 2 1)  ;; 4. <- dur not allowing longa to be triple-dotted.
+         (ly:make-duration 5 0) ;; 32 <- dur not allowing 4ter to be double-dotted.
+         (ly:make-duration 20)))
 
-   ;; Because we do some heuristics here, better let us assert the result.
-   (if (= mom (duration-length duration))
-    duration
-    (begin
-     (ly:warning "moment->duration failed to correctly calculate duration from:\n* ~A: result is:\n* ~A = ~A.\nOutputting visually incorrect but durationaly reliable result:\n* ~A.\n" (ly:make-moment mom) duration (ly:duration-length duration) (make-duration-of-length (ly:make-moment mom)))
-     (make-duration-of-length (ly:make-moment mom))))))
+  (test-equal "Complex duration is retrieved back."
+   durs
+   (length->durations
+    (apply + (map duration-length durs))))
 
-#(testing "mom->durargs"
-  (define dur (ly:make-duration 2 2))
-  (test-equal dur (moment->duration (ly:duration-length dur)))
-  (test-equal (ly:make-duration 2 2) (moment->duration 57/77)) ;; Here, I verified negdurlog and dot-count by hand, but factor comes from the code and should be suspected if something goes wrong.
+  ; TO DO: tests for the duration factor!
 )
 
 
@@ -177,6 +162,7 @@ chordify = #(define-music-function (remove-tied-notes mus) ((boolean? #f) ly:mus
                     first-rhythmic-events))))
 
      ;; Subtract duration of current chord and repeat from the next note.
+     ; TO DO: rewrite it using length->durations, for each duration...
      (map (lambda (m)
            (let ((new-duration (duration-subtract
                                 (ly:music-property m 'duration)
