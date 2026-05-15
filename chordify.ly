@@ -35,15 +35,16 @@
    (if (= len 0)
     (reverse durs)
     (let* ((ndl (- (inexact->exact (floor (log2 len)))))
-           (rem (- len (expt 1/2 ndl))))
+           (rem (- len (expt 1/2 ndl)))
+           (max-ndl 7))
      (cond ((null? durs)
             (loop (cons (ly:make-duration ndl) durs) rem))
            ((= ndl (next-durlog (car durs)))
             (loop (cons (add-dot (car durs)) (cdr durs)) rem))
            ((= rem 0)
             (reverse (cons (ly:make-duration ndl) durs)))
-           ((>= ndl 7) ; Value is smaller than 128th note.
-            (reverse (cons (ly:make-duration 7 0 (* rem (expt 2 ndl))) durs)))
+           ((> ndl max-ndl) ; Value is smaller than 128th note.
+            (reverse (cons (ly:make-duration max-ndl 0 (* len (expt 2 max-ndl))) durs)))
            (else (loop (cons (ly:make-duration ndl) durs) rem)))
 ))))
 
@@ -74,6 +75,22 @@
     (length->durations
      (apply + (map duration-length durs))))
   )
+
+  (test-group "Scaling present."
+
+   (define durs-expected (list (ly:make-duration 0 0 3001/3000)))
+   (define durs-actual (list (ly:make-duration 0) (ly:make-duration 7 0 16/375)))
+
+   (test-equal "Correct split duration"
+    (apply + (map duration-length durs-expected))
+    (apply + (map duration-length durs-actual)))
+
+   (test-equal "Compensate ill-measured music"
+    durs-actual
+    (length->durations (duration-length (car durs-expected))))
+  )
+
+
 
   ; TO DO: tests for the duration factor!
   ; (test-equal "Simple duration")
@@ -154,11 +171,16 @@ chordify = #(define-music-function (remove-tied-notes music) ((boolean? #f) ly:m
   (lambda (mus)
    (cond
     ((music-is-of-type? mus 'simultaneous-music)
-     (make-music 'SequentialMusic 'elements
-      (map (lambda (chord)
-            (let ((els (ly:music-property chord 'elements)))
-             (if (= (length els) 1) (car els) chord)))
-       (gather '() mus))))
+     ;; Guard against incorrect timing.
+     (let ((target-length (ly:moment-main (ly:music-length mus)))
+           (chordified-music
+            (make-music 'SequentialMusic 'elements
+             (map (lambda (chord)
+                    (let ((els (ly:music-property chord 'elements)))
+                    (if (= (length els) 1) (car els) chord)))
+              (gather '() mus)))))
+      chordified-music))
+
     (else mus)))
   music)
 
@@ -244,37 +266,39 @@ chordify = #(define-music-function (remove-tied-notes music) ((boolean? #f) ly:m
   )
 
   ; TO DO:
-  ; (test-equal "Doubled pitch is removed"
-  ;  (normalize #{ <c c'~>1 c1  #})
-  ;  (normalize #{ \chordify << { c1 c'1} \\ { c'\breve } >> #})
-  ; )
+  (test-skip 3)
 
-  ; (test-equal "Scaled music" (normalize #{
-  ;       <a~ c>4*12/15
-  ;       <a d~>4*8/15
-  ;       <c'~ d>4*4/15
-  ;       <c'~ e>4*12/15
-  ;       <c' f~>4*4/15
-  ;       <g~ f>4*8/15
-  ;       <g c>4*12/15
-  ;  #})
-  ;  (normalize #{ \chordify << \scaleDurations 2/3 { a2 c' g } \\ \scaleDurations 4/5 { c4 d e f c } >> #}))
+  (test-equal "Doubled pitch is removed"
+   (normalize #{ <c c'~>1 c1  #})
+   (normalize #{ \chordify << { c1 c'1} \\ { c'\breve } >> #})
+  )
 
-  ; (test-equal "Tuplet music" (normalize #{
-  ;       % TO DO
-  ;       <g d>4.
-  ;       \tuplet 15 {
-  ;           <a~ c>4*12
-  ;           <a d~>4*8
-  ;           <c'~ d>4*4
-  ;           <c'~ e>4*12
-  ;           <c' f~>4*4
-  ;           <g~ f>4*8
-  ;           <g c>4*12
-  ;       }
-  ;       \tuplet 3/2 c2
+  (test-equal "Scaled music" (normalize #{
+        <a~ c>4*12/15
+        <a d~>4*8/15
+        <c'~ d>4*4/15
+        <c'~ e>4*12/15
+        <c' f~>4*4/15
+        <g~ f>4*8/15
+        <g c>4*12/15
+   #})
+   (normalize #{ \chordify << \scaleDurations 2/3 { a2 c' g } \\ \scaleDurations 4/5 { c4 d e f c } >> #}))
 
-  ;  #})
-  ;  (normalize #{ \chordify << \tuplet 3/2 { d'2 a2 c' g c } \\ { g4. \tuplet 5 { c4 d e f c } } >> #}))
+  (test-equal "Tuplet music" (normalize #{
+        % TO DO
+        <g d>4.
+        \tuplet 15 {
+            <a~ c>4*12
+            <a d~>4*8
+            <c'~ d>4*4
+            <c'~ e>4*12
+            <c' f~>4*4
+            <g~ f>4*8
+            <g c>4*12
+        }
+        \tuplet 3/2 c2
+
+   #})
+   (normalize #{ \chordify << \tuplet 3/2 { d'2 a2 c' g c } \\ { g4. \tuplet 5 { c4 d e f c } } >> #}))
 
 )
