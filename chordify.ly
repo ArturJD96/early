@@ -175,9 +175,16 @@ chordify = #(define-music-function (remove-tied-notes music) ((boolean? #f) ly:m
      (let ((target-length (ly:moment-main (ly:music-length mus)))
            (chordified-music
             (make-music 'SequentialMusic 'elements
-             (map (lambda (chord)
+             (map (lambda (chord) ;; If 'chord' contains only one event or all are rests, output this one event (or rest).
                     (let ((els (ly:music-property chord 'elements)))
-                    (if (= (length els) 1) (car els) chord)))
+                     (cond ((every (lambda (m) (music-is-of-type? m 'rest-event)) els) (car els))
+                           ((= (length els) 1) (car els))
+                           (else
+                            (ly:music-set-property! chord 'elements
+                             (remove
+                              (lambda (e) (music-is-of-type? e 'rest-event))
+                              els))
+                            chord))))
               (gather '() mus)))))
       chordified-music))
 
@@ -265,40 +272,40 @@ chordify = #(define-music-function (remove-tied-notes music) ((boolean? #f) ly:m
    (normalize #{ \chordify { a2 << { b2 c1 } \\ { d2. e4 %{ s2 %} } >> } #})
   )
 
-  ; TO DO:
-  (test-skip 3)
+  ; ; TO DO:
+  ; (test-skip 3)
 
-  (test-equal "Doubled pitch is removed"
-   (normalize #{ <c c'~>1 c1  #})
-   (normalize #{ \chordify << { c1 c'1} \\ { c'\breve } >> #})
-  )
+  ; (test-equal "Doubled pitch is removed"
+  ;  (normalize #{ <c c'~>1 c1  #})
+  ;  (normalize #{ \chordify << { c1 c'1} \\ { c'\breve } >> #})
+  ; )
 
-  (test-equal "Scaled music" (normalize #{
-        <a~ c>4*12/15
-        <a d~>4*8/15
-        <c'~ d>4*4/15
-        <c'~ e>4*12/15
-        <c' f~>4*4/15
-        <g~ f>4*8/15
-        <g c>4*12/15
-   #})
-   (normalize #{ \chordify << \scaleDurations 2/3 { a2 c' g } \\ \scaleDurations 4/5 { c4 d e f c } >> #}))
+  ; (test-equal "Scaled music" (normalize #{
+  ;       <a~ c>4*12/15
+  ;       <a d~>4*8/15
+  ;       <c'~ d>4*4/15
+  ;       <c'~ e>4*12/15
+  ;       <c' f~>4*4/15
+  ;       <g~ f>4*8/15
+  ;       <g c>4*12/15
+  ;  #})
+  ;  (normalize #{ \chordify << \scaleDurations 2/3 { a2 c' g } \\ \scaleDurations 4/5 { c4 d e f c } >> #}))
 
-  (test-equal "Tuplet music" (normalize #{
-        % TO DO
-        <g d>4.
-        \tuplet 15 {
-            <a~ c>4*12
-            <a d~>4*8
-            <c'~ d>4*4
-            <c'~ e>4*12
-            <c' f~>4*4
-            <g~ f>4*8
-            <g c>4*12
-        }
-        \tuplet 3/2 c2
+  ; (test-equal "Tuplet music" (normalize #{
+  ;       % TO DO
+  ;       <g d>4.
+  ;       \tuplet 15 {
+  ;           <a~ c>4*12
+  ;           <a d~>4*8
+  ;           <c'~ d>4*4
+  ;           <c'~ e>4*12
+  ;           <c' f~>4*4
+  ;           <g~ f>4*8
+  ;           <g c>4*12
+  ;       }
+  ;       \tuplet 3/2 c2
 
-   #})
-   (normalize #{ \chordify << \tuplet 3/2 { d'2 a2 c' g c } \\ { g4. \tuplet 5 { c4 d e f c } } >> #}))
+  ;  #})
+  ;  (normalize #{ \chordify << \tuplet 3/2 { d'2 a2 c' g c } \\ { g4. \tuplet 5 { c4 d e f c } } >> #}))
 
 )
