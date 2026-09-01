@@ -1,7 +1,7 @@
 \version "2.24.4"
 
 \include "../testing.ily"
-#(define palaeography:supress-warnings #t)
+#(define palaeography:supress-warnings #f)
 
 %{
 %
@@ -181,6 +181,17 @@ Args:
   )
 )
 
+#(define (substitution-after-round str-old)
+  (define-substitution
+   `("([obph])" ,str-old)
+   (lambda (str-new)
+    (lambda (match-obj)
+     (let ((round (match:substring match-obj 1)))
+      (string-append round str-new))))
+))
+
+%% TO DO: test
+
 %{
 %
 %   Expose methods as a "palaeography" package.
@@ -205,7 +216,8 @@ Args:
    ; (i-dotless . ("i" . "i*"))
    ; (i-helper-dot . ("[mnuwv]i[mnuwv]" . "[mnuwv]i[mnuwv]"))
    (m-final . ( (auto . ,(substitution-last "m")) ))
-   ; (r-rotundum . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
+   ; (r-rotunda . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
+   (r-rotunda . ( (auto . ,(substitution-after-round "r")) ))
    (s-long . ( (auto . ,(substitution-except-last "s")) ))
               ; (always . ,(substitution "s"))
               ; (indicated . ,(substitution-escaped "s")))) ;; adds \\*
@@ -228,7 +240,7 @@ Args:
    (i-dotless . "ı")
    (i-helper-dot . "i")
    (m-final . "ɜ")
-   (r-rotundum . "ꝛ")
+   (r-rotunda . "ꝛ")
    (s-long . "ſ")
    (nasals . "~") ;; adding *above* the vowel... OR better represent as dictionary?
    (us-final . "⁹")
@@ -239,7 +251,7 @@ Args:
    (i-dotless . "ı")
    (i-helper-dot . "i")
    (m-final . "z") ; make hook: z or 3-like "" but more contracted.
-   (r-rotundum . "")
+   (r-rotunda . "")
    (s-long . "ſ")
    (v-as-u . "u")
    (nasals . "~") ; "append to letter" hook? OR a dictionary?
@@ -298,6 +310,8 @@ Args:
             (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
             (glyphs (assoc-ref early:supported-fonts font))
            )
+
+      (display font)
 
       (for-each
        (lambda (context-rule)

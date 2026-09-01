@@ -95,7 +95,7 @@
              (i-dotless . auto)
              (i-helper-dot . never)
              (m-final . auto)
-             (r-rotundum . auto)
+             (r-rotunda . auto)
              (s-long . auto)
              (v-as-u . auto)
             )
