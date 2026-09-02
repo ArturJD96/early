@@ -85,6 +85,16 @@ Args:
    )
 ))
 
+#(define (substitution-all-escapable str-old)
+  (define-substitution
+   `("(" ,str-old ")" "(\\*?)")
+   (lambda (str-new)
+    (lambda (match-obj)
+     (let ((escaped (string=? "*" (match:substring match-obj 2))))
+      (if escaped str-old str-new)
+   )))
+))
+
 #(define (substitution-initial str-old)
 "This procedure substitutes all 'str-old' when they are the last letter."
   (define-substitution
@@ -181,13 +191,32 @@ Args:
   )
 )
 
-#(define (substitution-after-round str-old)
+#(define (substitution-after str-remaining str-old)
   (define-substitution
-   `("([obph])" ,str-old)
-   (lambda (str-new)
+   `("(" ,str-remaining ")" ,str-old)
+   (lambda (str-new) ;; TO DO: or str-new
     (lambda (match-obj)
      (let ((round (match:substring match-obj 1)))
       (string-append round str-new))))
+))
+
+#(define (substitution-after-vowel str-old)
+  (define-substitution
+   `("([aeiouy])" ,str-old)
+   (lambda (str-new-or-strings-alist)
+    (lambda (match-obj)
+     (if (alist? str-new-or-strings-alist)
+      (assq-ref str-new-or-strings-alist (string->symbol (match:substring match-obj 1)))
+      str-new-or-strings-alist)))
+))
+
+#(define (substitution-ignored-abbreviation)
+  (define-substitution
+   `("!<(\\w+)>")
+   (lambda (_)
+    (lambda (match-obj)
+     (let ((str-new (match:substring match-obj 1)))
+      str-new)))
 ))
 
 %% TO DO: test
@@ -213,21 +242,35 @@ Args:
 #(define early:spelling-rules `(
   ;; (rule . auto (auto . indicated))
   (allographs . (
-   ; (i-dotless . ("i" . "i*"))
+   (i-dotless . ( (auto . ,(substitution-all "i")) ))
    ; (i-helper-dot . ("[mnuwv]i[mnuwv]" . "[mnuwv]i[mnuwv]"))
    (m-final . ( (auto . ,(substitution-last "m")) ))
    ; (r-rotunda . ("[OBPHDobphd]r" . "[OBPHDobphd]r"))
-   (r-rotunda . ( (auto . ,(substitution-after-round "r")) ))
-   (s-long . ( (auto . ,(substitution-except-last "s")) ))
-              ; (always . ,(substitution "s"))
+   (r-rotunda . ( (auto . ,(substitution-after "[bpho]" "r")) ))
+   (s-long . ( (auto . ,(substitution-except-last "s"))
+               (always . ,(substitution-all-escapable "s")) ))
               ; (indicated . ,(substitution-escaped "s")))) ;; adds \\*
-
+   ; (s-short . ( (indicated . ,(substitution-all "s\\*")) ))
    (v-as-u . ( (auto . ,(substitution-all "v")) ))
    (i-initial-capitalised . ( (auto . ,(substitution-initial "i")) ))
+   (y-dotted . ( (indicated . ,(substitution-all "y\\*")) ))
+
   ))
   (ligatures .  (
-   ; (nasals . ("[aeiou][mn]" . "[aeiou][mn]"))
+   (christ . ( (indicated . ,(substitution-all "C\\*hrist")) ))
+   (que . ( (indicated . ,(substitution-all "q\\*ue")) ))
+   (quem . ( (indicated . ,(substitution-all "q\\*uem")) ))
+   (nasals . ( (indicated . ,(substitution-after-vowel "\\*[mn]")) ))
+   (er-final . ( (indicated . ,(substitution-last "e\\*r")) ))
    (us-final . ( (indicated . ,(substitution-last "u\\*s")) ))  ;("us[\\.,:;\\?!]?$" . "us[\\.,:;\\?!]?$"))
+   (rum-final . ( (indicated . ,(substitution-last "r\\*um")) ))
+   (et-final . ( (indicated . ,(substitution-last "e\\*t")) ))
+   (con . ( (indicated . ,(substitution-all "c\\*on")) ))
+   (pr . ( (indicated . ,(substitution-all "pr\\*o")) ))
+   (per . ( (indicated . ,(substitution-all "p\\*[eao]r")) ))
+   (ignored-abbreviation . ( (indicated . ,(substitution-ignored-abbreviation)) ))
+   (i-abbreviation . ( (indicated . ,(substitution-after "\\w" "<i\\w*>")) ))
+   (abbreviation . ( (indicated . ,(substitution-after "\\w" "<\\w+>")) ))
   ))
 ))
 
@@ -237,25 +280,54 @@ Args:
 #(define-public early:supported-fonts '(
 
   ("__unicode__" . ( ;; Debug purposes.
+   ;; Ligatures
+   (er-final . "ꝯ") ;; ???
+   (us-final . "ꝯ")
+   (con . "ɔ")
+   (er-final . "'")
+   (quem . "ꝗ̄")
+   (rum-final . "ꝝ")
+   (que . "ꝗ")
    (i-dotless . "ı")
    (i-helper-dot . "i")
    (m-final . "ɜ")
    (r-rotunda . "ꝛ")
    (s-long . "ſ")
-   (nasals . "~") ;; adding *above* the vowel... OR better represent as dictionary?
+   (s-short . "s")
+   (nasals . "̄") ;; adding *above* the vowel... OR better represent as dictionary?
    (us-final . "⁹")
    (abbreviation . "~") ;; added to the middle letter of a custom abbreviation..? A hook?
   ))
   ;; Palaeography fonts by JUAN-JOSÉ MARCOS (https://www.typofonts.com/palefont.html)
   ("Gothica Rotunda" . (
-   (i-dotless . "ı")
-   (i-helper-dot . "i")
-   (m-final . "z") ; make hook: z or 3-like "" but more contracted.
-   (r-rotunda . "")
-   (s-long . "ſ")
-   (v-as-u . "u")
-   (nasals . "~") ; "append to letter" hook? OR a dictionary?
+   ;; Ligatures
+   (christ . "x") ;; but it's more like greek 'chi'.
+   (quem . "")
+   (que . "")
+   (pr . "")
+   (per . "")
+   (con . "")
+   (ignored-abbreviation . "") ;; Move it to system (represented by !<\w> regexp)
+   (i-abbreviation . "")
+   (abbreviation . "")
    (us-final . "")
+   (rum-final . "")
+   (et-final . "")
+   (er-final . "’")
+   (nasals . ((a . "")
+              (e . "")
+              (i . "")
+              (o . "")
+              (u . "")))
+    ;; Allographs
+    (i-dotless . "ı")
+    (i-helper-dot . "i")
+    (m-final . "z") ; make hook: z or 3-like "" but more contracted.
+    (r-rotunda . "")
+    (s-long . "ſ")
+    (s-short . "s")
+    (v-as-u . "u")
+    (y-dotted . "")
   ))
   ("Gothica Bastarda" . (
    (s-long . "$")
@@ -268,7 +340,6 @@ Args:
 
 %% TO DO
 % #(define-public (early-palaeography:add-spelling-rule rule))
-
 
 %{
 %
@@ -300,7 +371,7 @@ Args:
             (font-config (ly:context-property context 'early-font-config))
             (context-allographs (ly:context-property context 'early-font-allographs))
             (context-ligatures (ly:context-property context 'early-font-ligatures))
-            (context-rules (fold-right cons context-ligatures context-allographs))
+            (context-rules (fold-right cons context-allographs context-ligatures))
             ;; font config
             (allographs (if (assq-ref font-config 'allographs) (assq-ref early:spelling-rules 'allographs) '()))
             (ligatures (if (assq-ref font-config 'ligatures) (assq-ref early:spelling-rules 'ligatures) '()))
@@ -310,8 +381,6 @@ Args:
             (font (if unicode "__unicode__" (ly:grob-property grob 'font-name)))
             (glyphs (assoc-ref early:supported-fonts font))
            )
-
-      (display font)
 
       (for-each
        (lambda (context-rule)
@@ -325,12 +394,12 @@ Args:
           (when (not glyph)
            (unless palaeography:supress-warnings
             (ly:warning (format #f "🥀 Palaeography: unsupported glyph: ~a for font ~a\n" rule-name font)))
-           (set! glyph "[~?~]")
+           (set! glyph "[-???-]")
           )
 
           (when (not substitution)
            (unless palaeography:supress-warnings
-            (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: ~a for font ~a\n" rule-name font)))
+            (ly:warning (format #f "🥀 Palaeography: unsupported allograph rule: \"~a ~a\" for font ~a\n" rule-name rule-mode font)))
            (set! substitution (substitution-dummy glyph))
           )
 
