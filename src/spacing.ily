@@ -156,7 +156,6 @@
     }
 
     \context { \EarlyVoice
-
         %{
             Responsibilities of those engravers
             are taken by "early:Line-break-engraver".
