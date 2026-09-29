@@ -291,12 +291,12 @@ Args:
    (pro . "ꝓ")
    (i-dotless . "ı")
    (i-helper-dot . "i")
-   (m-final . "ɜ")
+   (m-final . "ꝫ")
    (r-rotunda . "ꝛ")
    (s-long . "ſ")
    (s-short . "s")
    (nasals . "̄") ;; adding *above* the vowel... OR better represent as dictionary?
-   (us-final . "⁹")
+   (us-final . "ꝰ")
    (abbreviation . "~") ;; added to the middle letter of a custom abbreviation..? A hook?
   ))
   ;; Palaeography fonts by JUAN-JOSÉ MARCOS (https://www.typofonts.com/palefont.html)
