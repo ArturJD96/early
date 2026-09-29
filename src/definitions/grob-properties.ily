@@ -3,7 +3,7 @@
 % Grob properties
 #(set-object-property! 'early-notation-type 'backend-type? symbol?)
 #(set-object-property! 'early-style 'backend-type? symbol?)
-#(set-object-property! 'early-color 'backend-type? symbol?)
+#(set-object-property! 'early-color 'backend-type? color?)
 #(set-object-property! 'early-hollow 'backend-type? boolean?)
 
 % quadrata note
@@ -17,3 +17,6 @@
 
 
 #(set-object-property! 'early-quadrata-properties 'backend-type? alist?)
+
+
+#(set-object-property! 'early-quill 'backend-type? alist?)

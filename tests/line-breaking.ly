@@ -20,7 +20,6 @@
 }
 
 
-fbreak = \tag #'facsimile-breaks \break
 
 cantus = \early \relative g' {
 
@@ -75,7 +74,7 @@ cantus = \early \relative g' {
         tagline = ""
     }
     \score {
-        \removeWithTag #'facsimile-breaks
+        \removeWithTag #'early:facsimile-breaks
         \new EarlyStaff <<
             \new EarlyVoice { \cantus }
         >>
@@ -91,7 +90,7 @@ cantus = \early \relative g' {
         tagline = ""
     }
     \score {
-        \keepWithTag #'facsimile-breaks
+        \keepWithTag #'early:facsimile-breaks
         \new EarlyStaff <<
             \new EarlyVoice { \cantus }
         >>

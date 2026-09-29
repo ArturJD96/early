@@ -1,3 +1,6 @@
+\version "2.24.4"
+% \include "../contexts.ily"
+
 syl =
 #(define-music-function (syllable music) (string? ly:music?)
   (ly:music-set-property! music 'early:lyrics syllable)
@@ -54,14 +57,14 @@ into a proper Lyrics contexts."
     music)
 
    ;; Does it mess-up note/lyric alignment?
-   ;; try with \addlyrics.
+   ;; try with \addlyrics. ~ AJD: tried, it injects custom Voice, not EarlyVoice.
    (make-music 'SimultaneousMusic
     'elements
     (list music
      (make-music 'ContextSpeccedMusic
       'create-new #t
       'property-operations '()
-      'context-type 'Lyrics
+      'context-type 'EarlyLyrics
       'element
       (make-music 'SequentialMusic
        'elements
@@ -76,7 +79,7 @@ into a proper Lyrics contexts."
          (monosyllabic? (ly:music-property music 'early:monosyllabic)) ;; EARLY music property.
          (stencil (ly:grob-property grob 'stencil))
          (extent (ly:stencil-extent stencil X))
-         (width (- (cdr extent) (car extent)))
+         (width (abs (- (cdr extent) (car extent))))
          (mod (/ width 2)))
    (if monosyllabic?
     (- offset mod)

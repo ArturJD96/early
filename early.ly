@@ -12,6 +12,7 @@
 \include "src/music/lyrics.ily"
 
 \include "mensural.ly"
+\include "editorial.ly"
 
 \defineBarLine "|||" #'(#t #f #t)
 

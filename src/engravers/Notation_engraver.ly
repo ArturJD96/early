@@ -18,7 +18,20 @@ as found in stem-engraver.cc."
 ))
 
 
-#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color)
+#(define (adjust-petrucci-notehead! notation notehead dur-log implicit-color colored halved)
+
+  (when colored
+   (set! implicit-color +inf.0)
+   (set! notation 'blackmensural)) ;; what about hollow whitemensural?
+
+  (when halved
+   (case notation
+    ((whitemensural)
+     (set! implicit-color -inf.0)
+     (set! notation 'blackmensural)) ;; what about hollow whitemensural?
+    ((blackmensural)
+     (set! implicit-color +inf.0)
+     (set! notation 'whitehollow))))
 
   (case notation
 
@@ -37,9 +50,7 @@ as found in stem-engraver.cc."
            (ly:grob-set-property! notehead 'style 'petrucci)
            (if (> dur-log 0)
             (ly:grob-set-property! notehead 'duration-log 1)
-            (ly:grob-set-property! notehead 'duration-log (1- dur-log))))
-   )))
-
+            (ly:grob-set-property! notehead 'duration-log (1- dur-log)))) )))
 )
 
 
@@ -62,6 +73,7 @@ There are all delegated to early:GROB::print functions."
        (dummy '()))
   (make-engraver
    (acknowledgers
+
     ((note-head-interface engraver grob source)
      (let* (;; context properties
             (notation (ly:context-property context 'notation))
@@ -81,6 +93,7 @@ There are all delegated to early:GROB::print functions."
             (color-minor (assoc-ref mensura-properties 'color-minor))
             (color-secondary (assoc-ref mensura-properties 'color-secondary))
             (hollow (assoc-ref mensura-properties 'hollow))
+            (colored (or color color-minor))
            )
 
       ;; check out: select-head-glyph
@@ -94,17 +107,16 @@ There are all delegated to early:GROB::print functions."
       (ly:grob-set-property! grob 'early-style early-style)
       (ly:grob-set-property! grob 'early-hollow hollow)
       (ly:grob-set-property! grob 'early-color
-       (cond ((or color color-minor) coloration)
-              (color-secondary coloration-secondary)))
+       (if color-secondary coloration-secondary coloration))
 
       ;; correct note implicit diminution color.
-      (when (not (or (null? implicit-color)))
+      (when (or (not (null? implicit-color)) colored)
        (apply
         (case style ((petrucci) adjust-petrucci-notehead!)
                     ((blackpetrucci) adjust-petrucci-notehead!)
                     (else (ly:error "Note head style (WHICH???) duration-log adjustment not yet implemented.")
                           adjust-petrucci-notehead!))
-        (list notation grob dur-log implicit-color))
+        (list notation grob dur-log implicit-color colored hollow))
       )
 
     )) ;; end of notehead-interface

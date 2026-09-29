@@ -16,6 +16,7 @@
 \include "engravers/Mensura_engraver.ly"
 \include "engravers/Rest_position_engraver.ly"
 \include "engravers/Augmentation_engraver.ly" % check native \shiftDurations
+\include "engravers/Palaeography_engraver.ly" % check native \shiftDurations
 
 %% macra
 \include "macra/early-staff.ly"
@@ -51,7 +52,7 @@
         %% Grob properties
         \override NoteHead.stencil = #early:note-head::print
         \override Flag.stencil = #old-straight-flag
-        \override Stem.neutral-direction = #UP
+        \override Stem.neutral-direction = #UP % TO DO: allow for specifying when stems flip. Sometimes they flip only from 4th line, e.g. first systems of ILVB 158.
 
     }
 
@@ -74,12 +75,39 @@
 	       (1/2 . "accidentals.mensural1"))
 
         \override TimeSignature.style = #'mensural
-        \override LedgerLineSpanner.stencil = ##f
-        \override StaffSymbol.stencil = #(early-staff jagged-line)
+        % \override LedgerLineSpanner.stencil = ##f
+        \override StaffSymbol.stencil = #(early-staff delicate-jagged-line)
+
+    }
+
+    \context { \Lyrics
+
+        \name EarlyLyrics
+        \alias Lyrics
+        \description "..."
+
+        \consists #early:Palaeography_engraver
+            early-font-config = #'(
+             (allographs . #t)
+             (ligatures . #t)
+            )
+            early-font-allographs = #'(
+             (i-dotless . auto)
+             (i-helper-dot . never)
+             (m-final . auto)
+             (r-rotunda . auto)
+             (s-long . auto)
+             (v-as-u . auto)
+            )
+            early-font-ligatures = #'(
+             (et . indicated) ; 'ampersand: [et], tironian: [et]*
+            )
+            early-font-pure-unicode = ##t
 
     }
 
     \inherit-acceptability EarlyStaff PetrucciStaff
     \inherit-acceptability EarlyVoice PetrucciVoice
+    \inherit-acceptability EarlyLyrics Lyrics
 
 }

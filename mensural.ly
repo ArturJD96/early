@@ -4,6 +4,45 @@
 \include "src/definitions/events.ily"
 \include "src/definitions/mensurations.ily"
 
+
+% Legacy code (still lingering in other definitions files.)
+% %% Left here for future considerations.
+%
+% #(define (make-mensura-event music)
+%   (descend-to-context
+%    (make-apply-context
+%     (lambda (context)
+%      (ly:broadcast (ly:context-event-source context)
+%                    (ly:make-stream-event
+%                     (ly:make-event-class 'early:mensura-event)
+%                     (ly:music-mutable-properties music)))))
+%    'EarlyVoice))
+#(define (define-event! type properties)
+   (set-object-property! type
+                         'music-description
+                         (cdr (assq 'description properties)))
+   (set! properties (assoc-set! properties 'name type))
+   (set! properties (assq-remove! properties 'description))
+   (hashq-set! music-name-to-property-table type properties)
+   (set! music-descriptions
+         (sort (cons (cons type properties)
+                     music-descriptions)
+               alist<?)))
+#(unless (ly:make-event-class 'early:mensura-event)
+  ; (define-event-class 'early-event 'music-event)
+  ;; Legacy...
+  (define-event-class 'early:mensura-event 'early-event)
+  (define-event-class 'early:color-minor-sequence 'early-event)
+  (define-event! 'early:MensuraEvent
+   '((description . "Used to modify current early:mensura-properties")
+     ;(iterator-ctor . ,ly:sequential-iterator::constructor)
+     ;(elements-callback . ,make-mensura-event)
+     (types . (early:mensura-event time-signature-event StreamEvent)))
+  ))
+
+
+
+
 #(define (early:get-default-mensura-properties)
     ;; default public properties
   '((blackmensural . #f)
@@ -32,7 +71,7 @@
      (cond
       ;; ignore nested color-minor expressions
       ((and (music-is-of-type? m 'sequenctial-event)
-            (early:music-property m 'color-minor))
+            (early:mensura-property m 'color-minor))
        (early:handle-color-minor music mensura-properties))
       ;; looping only through the notes etc
       ((music-is-of-type? m 'rhythmic-event)
@@ -54,11 +93,11 @@
                           (ly:duration-log (ly:music-property m 'duration))))
          (when (and perfection-setting (car perfection-setting))
           (ly:error "Cannot do color-minor when division is perfect"))
-         (early:music-set-property! m 'color-minor
+         (early:mensura-set-property! m 'color-minor
           first-note-dur-correction)
         )
         (begin
-         (early:music-set-property! m 'color-minor
+         (early:mensura-set-property! m 'color-minor
           (* remaining-dur-correction
              (/ note remaining)
              (/ first-note note)))
@@ -67,7 +106,7 @@
        ;; for all the notes in color-minor:
        (ly:music-set-property! m 'duration
         (ly:duration-compress (ly:music-property m 'duration)
-                              (early:music-property m 'color-minor)))
+                              (early:mensura-property m 'color-minor)))
      ))
      m)
     music)))
@@ -85,6 +124,7 @@
          (proportio (props:get 'proportio))
          (proportion (if (fraction? proportio) proportio (/ 1 proportio)))
          (default-ternary (or (props:get 'default-ternary) is-rest))
+         (hollow (props:get 'hollow))
 
          (punctum-perfectionis (props:get 'punctum-perfectionis))
 
@@ -111,6 +151,9 @@
        (set! compress-factor (* compress-factor mod))))
       perfection)
 
+    (when hollow
+     (set! compress-factor (/ compress-factor 2)))
+
     (ly:duration-compress dur compress-factor)
 
   ))
@@ -132,13 +175,15 @@
 mensura =
 #(define-music-function (signum) (number-or-string?)
   (let* ((mensuration-properties (assoc-ref all-mensurations signum))
-         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy)))
+         (time-signature-dummy (assoc-ref mensuration-properties 'time-signature-dummy))
+         (num (car time-signature-dummy))
+         (den (cdr time-signature-dummy)))
     (unless mensuration-properties
-     (display signum)
-     (ly:error "Unrecognized signum of mensuration. You can define your own mensuration using add-mensuration procedure."))
+     (ly:error "Unrecognized signum of mensuration: ~A. You can define your own mensuration using add-mensuration procedure." signum))
     #{
         #(mensuration mensuration-properties)
-        \time #time-signature-dummy
+        #(time '() time-signature-dummy)
+        % \time #'() #time-signature-dummy
     #}))
 
 tempus =
@@ -204,6 +249,7 @@ mensural =
                    (let ((key (car prop))
                          (val (cdr prop)))
                     ;; TO DO: add
+                    ;(display (list key val))(newline)
                     (if (number? key)
                      (let* ((perfection (props:get 'perfection))
                             (settings (assoc-ref perfection key))
@@ -214,13 +260,22 @@ mensural =
                      (props:set! key val))))
          props-new)
         m))
-      ;; handle color minor apart
+
       ((and (music-is-of-type? m 'sequential-music)
-            (early:music-property m 'color-minor))
+            (early:mensura-property m 'color-minor))
        (early:handle-color-minor m mensura-properties))
-      ;; adjust duration
+      ;; adjust duration and handle color-minor.
       ((music-is-of-type? m 'rhythmic-event)
-       (ly:music-set-property! m 'early:mensura-properties (alist-copy mensura-properties))
+       ;; override default properties with the already set ones.
+       (let ((props-by-far (ly:music-property m 'early:mensura-properties))
+             (default-props (alist-copy mensura-properties)))
+        (for-each (lambda (prop)
+                   (let ((key (car prop))
+                         (val (cdr prop)))
+                    (set! default-props
+                     (assoc-set! default-props key val))))
+         props-by-far)
+         (ly:music-set-property! m 'early:mensura-properties default-props))
        (ly:music-set-property! m 'duration
         (early:duration-mensurate m mensura-properties))
        m)
@@ -277,35 +332,64 @@ imperfect =
 
 pdiv =
 #(define-music-function (note) (ly:music?)
-  (early:music-set-property! note 'punctum-divisionis #t)
+  (early:mensura-set-property! note 'punctum-divisionis #t)
   (add-punctum note)
 )
 
 
 pperf =
 #(define-music-function (note) (ly:music?)
-  (early:music-set-property! note 'punctum-perfectionis #t)
+  (early:mensura-set-property! note 'punctum-perfectionis #t)
   (add-punctum note)
 )
 
 
 colorMinor =
 #(define-music-function (music-sequence) (ly:music?)
-  ;; setting color-minor to true already on sequence level
+  ;; setting color-minor to true also on sequence level
   ;; because the 'mensural' function will take care of it separately.
-  (early:music-set-property! music-sequence 'color-minor #t)
-  #{
-    \set EarlyVoice.coloration = #black % TO DO: use the default color used for imperfectum.
-    #music-sequence
-  #})
+  (early:mensura-set-property! music-sequence 'color-minor #t)
+  (music-map
+   (lambda (m)
+    (when (eq? (ly:music-property m 'name) 'NoteEvent)
+     (early:mensura-set-property! m 'color-minor #t))
+    m)
+   music-sequence)
+)
 
 
 planus = \mensura "X"
 
-hollow = % better use context?
-#(define-music-function (note) (ly:music?)
-  (early:music-set-property! note 'hollow #t)
-  note)
+halveBase =
+#(define-music-function () ()
+  (make-music
+   'early:MensuraEvent
+   'mensura-properties
+   '((hollow . #t))))
+
+unhalveBase =
+#(define-music-function () ()
+  (make-music
+   'early:MensuraEvent
+   'mensura-properties
+   '((hollow . #f))))
+
+halve = {
+    \halveBase
+}
+unhalve = {
+    \unhalveBase
+}
+
+%% Very dummy implementations.
+color =
+#(define-music-function (bool) (boolean?)
+  (if bool #{ \blackmensural #} #{ \whitemensural #}))
+
+% hollow = % better use context?
+% #(define-music-function (note) (ly:music?)
+%   (early:mensura-set-property! note 'hollow #t)
+%   note)
 
 % maxima = #(ly:make-duration -3 0 1/1)
 
@@ -316,66 +400,56 @@ hollow = % better use context?
   %   (list (make-music 'early:ColorMinorEnd))))
   % music)
 
-fbreak = \tag #'early:facsimile \break
+% syl =
+% #(define-music-function (lyric music) (string? ly:music?)
+%   "
+%   Inserts \\melisma and \\melismaEnd contexts
+%   after the first note and after last event.
 
-stemU = \tag #'early:facsimile-stem-direction \stemUp
-stemD = \tag #'early:facsimile-stem-direction \stemDown
-stemN = \tag #'early:facsimile-stem-direction \stemNeutral
+%   NOTE: this does not check if melisma is there
+%   ISSUE: 'melisma' might not be semantic here...
+%   "
 
-oStemU = \tag #'early:facsimile-stem-direction \once \stemUp
-oStemD = \tag #'early:facsimile-stem-direction \once \stemDown
-oStemN = \tag #'early:facsimile-stem-direction \once \stemNeutral
+%   (define (get-first-note-index elems)
+%    (let loop ((elems elems) (index 0))
+%     (cond ((null? elems) #f)
+%           ((music-is-of-type? (car elems) 'note-event) index)
+%           (else (loop (cdr elems) (1+ index))))))
 
-syl =
-#(define-music-function (lyric music) (string? ly:music?)
-  "
-  Inserts \\melisma and \\melismaEnd contexts
-  after the first note and after last event.
+%   (define (insert elems elem index)
+%    (let loop ((front '()) (tail elems) (i 0))
+%     (if (null? tail)
+%      front
+%      (loop (if (= i index)
+%             (append front (list (car tail) #{ \melisma #}))
+%             (append front (list (car tail))))
+%            (cdr tail)
+%            (1+ i))
+%     )))
 
-  NOTE: this does not check if melisma is there
-  ISSUE: 'melisma' might not be semantic here...
-  "
+%   (define (insert-melisma-after-first-note mus)
+%    (let ((melisma-inserted #f))
+%     (music-map
+%      (lambda (m)
+%       (let* ((elems (ly:music-property m 'elements))
+%              (first-note-index (get-first-note-index elems))
+%              (insertable (and (not melisma-inserted) first-note-index)))
+%        (when insertable
+%        ; (ly:music-set-property! m 'elements
+%        ;  (insert elems #{ \melisma #} first-note-index))
+%         (ly:music-set-property! m 'elements
+%          (insert elems #{ \melisma #} first-note-index))
+%         (set! melisma-inserted #t))
+%        m))
+%      mus)))
 
-  (define (get-first-note-index elems)
-   (let loop ((elems elems) (index 0))
-    (cond ((null? elems) #f)
-          ((music-is-of-type? (car elems) 'note-event) index)
-          (else (loop (cdr elems) (1+ index))))))
+%   (define (insert-melisma-end mus)
+%    (ly:music-set-property! mus 'elements
+%     (append! (ly:music-property mus 'elements) (list #{ \melismaEnd #})))
+%    mus)
 
-  (define (insert elems elem index)
-   (let loop ((front '()) (tail elems) (i 0))
-    (if (null? tail)
-     front
-     (loop (if (= i index)
-            (append front (list (car tail) #{ \melisma #}))
-            (append front (list (car tail))))
-           (cdr tail)
-           (1+ i))
-    )))
-
-  (define (insert-melisma-after-first-note mus)
-   (let ((melisma-inserted #f))
-    (music-map
-     (lambda (m)
-      (let* ((elems (ly:music-property m 'elements))
-             (first-note-index (get-first-note-index elems))
-             (insertable (and (not melisma-inserted) first-note-index)))
-       (when insertable
-       ; (ly:music-set-property! m 'elements
-       ;  (insert elems #{ \melisma #} first-note-index))
-        (ly:music-set-property! m 'elements
-         (insert elems #{ \melisma #} first-note-index))
-        (set! melisma-inserted #t))
-       m))
-     mus)))
-
-  (define (insert-melisma-end mus)
-   (ly:music-set-property! mus 'elements
-    (append! (ly:music-property mus 'elements) (list #{ \melismaEnd #})))
-   mus)
-
-  (insert-melisma-end
-   (insert-melisma-after-first-note music)))
+%   (insert-melisma-end
+%    (insert-melisma-after-first-note music)))
 
 perf =
 #(define-music-function (music) (ly:music?) #{
