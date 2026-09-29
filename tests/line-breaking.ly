@@ -8,13 +8,6 @@
 
 \layout {
 
-    indent = 0
-    % short-indent = 80
-
-    %% This needs to go together – otherwise no effect.
-    \context { \EarlyStaff
-        \override NoteColumn.extra-spacing-width = #`(0 . ,EXTRA)
-    }
     \context { \EarlyVoice
         \override NoteHead.extra-spacing-width = #`(0 . ,EXTRA)
         \override Rest.extra-spacing-width = #`(0 . ,EXTRA)
@@ -74,8 +67,8 @@ cantus = \early \relative g' {
 
 \bookpart {
     \header {
-        title = "Forced linebreaks"
-        subtitle = "according to manuscript"
+        title = "Natural linebreaks"
+        subtitle = "early:Line_break_engraver"
         subsubtitle = "Smijers, Magnificat VIII toni 2"
         composer = "ILVB 158"
         copyright = "Engraved with Early"
@@ -90,8 +83,8 @@ cantus = \early \relative g' {
 }
 \bookpart {
     \header {
-        title = "Natural linebreaks"
-        subtitle = "early:Line_break_engraver"
+        title = "Forced linebreaks"
+        subtitle = "according to manuscript"
         subsubtitle = "Smijers, Magnificat VIII toni 2"
         composer = "ILVB 158"
         copyright = "Engraved with Early"
