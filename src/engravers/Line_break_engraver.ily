@@ -14,9 +14,7 @@
 
 #(define (grob-width grob)
 
-;; Not reading from Score context... get it better from EarlyVoice!
-
-  (let ((extent (ly:grob-property grob 'X-extent))
+;; Not reading from Score context... get it better from EarlyVoice!  (let ((extent (ly:grob-property grob 'X-extent))
         (extra (ly:grob-property grob 'extra-spacing-width))
         (padding (ly:grob-property grob 'padding)))
 
@@ -28,10 +26,6 @@
      0
      (+ (limit (- (car space)))
         (limit (cdr space)))))
-
-   ; (display grob)
-   ; (display extra)
-   ; (newline)
 
    (+ (width extent)
       (width extra)
@@ -52,25 +46,24 @@
        indent
        right-margin)))
 
-  (let* ((x 0)
+  (let* ((x 0) ;; SHOULD BE: minus clef!
             ;; Current X offset from the beginning of the line.
-         (breaks #t)
+         (breaks #f)
             ;; Is a break happening now?
-         (line-width '())
+         (line-width '()) ;; SHOULD BE: minus custos!
             ;; Speculated line-width of the current system.
-         (x-postponed '())
-            ;; The width of the current grob that needs to be moved
-            ;; to the next line.
          (break-line! (lambda (x-init)
                        (set! breaks #t)
                        (set! x x-init)))
          (step (lambda (grob)
+                (when (null? line-width) (set! line-width (calc-system-width grob)))
                 (let* ((width (grob-width grob))
                        (new-x (+ x width)))
                  (if (< new-x line-width)
                   (set! x new-x)
                   (break-line! width)))))
          (step-only-if-broken (lambda (grob)
+                               (when (null? line-width) (set! line-width (calc-system-width grob)))
                                (when breaks
                                 (set! line-width (calc-system-width grob))
                                 (step grob)))))
@@ -82,6 +75,7 @@
 
      ((bar-line-interface engraver grob source) ;; make it more precise
       (when breaks
+       (set! breaks #f)
        (let ((non-musical-paper-column (ly:context-property context 'currentCommandColumn)))
         (ly:grob-set-property!
          non-musical-paper-column
@@ -90,14 +84,21 @@
      )
      ;; Here follow the interfaces of grobs affecting horizontal spacing
      ;; only when line is broken.
+     ((non-musical-paper-column-interface engraver grob source)
+      (display "\nGROB:")(display x)(display grob))
+     ((grob-interface engraver grob source)
+      (display "\nGROB:")(display x)(display grob))
      ((ambitus-interface engraver grob source)
       (step-only-if-broken grob))
      ((clef-interface engraver grob source)
-      (step-only-if-broken grob))
+      (if (= x 0)
+       (step grob)
+       (step-only-if-broken grob)))
      ((time-signature-interface engraver grob source)
-      (step-only-if-broken grob))
+      ;(display (ly:grob-property grob 'X-extent))
+      (step grob))
      ((key-signature-interface engraver grob source)
-      (step-only-if-broken grob))
+      (step grob))
      ((custos-interface engraver grob source)
       ;; Custos does not affect spacing but should!
       ;; Note that it is created AFTER line-breaking
@@ -108,20 +109,27 @@
       '())
      ;; Here follow the interfaces of grobs affecting horizontal spacing
      ;; when music time flows.
+     ((ledger-line-spanner-interface engraver grob source)
+      (step-only-if-broken grob))
      ((dots-interface engraver grob source)
       ;; WHen there is enough space, dot does not increase spacing.
       ;; Thus what is below is incorrect;
       ;; I should check first if the dot causes any x increase
       ;; (i.e. when dot's x-extent/grob width is smaller than it's host's note column extent.)
+      ;; 2025: dots do not influence space unless in EarlyVoice.
       (step grob))
-     ;((rhythmic-grob-interface engraver grob source)
-     ; (display grob))
-     ((note-column-interface engraver grob source)
+     ((dot-column-interface engraver grob source)
+      ;(display source)
+      ;(display (ly:grob-property grob 'padding))
+      ;(display (ly:engraver-make-grob engraver 'Dot grob))
+      (step grob))
+     ((rhythmic-grob-interface engraver grob source)
+      (step grob))
+     ;((note-column-interface engraver grob source)
       ;; Well, changing e.g. NoteHeads extra-width-offset
       ;; does not affect note column width.
       ;; Should I just get the bigger available value
       ;; (i.e. notehead vs stem vs column vs dot???)?
-      (when breaks (set! breaks #f))
-      (step grob))
+      ;(step grob))
     )
 )))
