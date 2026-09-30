@@ -305,7 +305,7 @@ Args:
    (christ . "x") ;; but it's more like greek 'chi'.
    (quem . "")
    (que . "")
-   (pr . "")
+   (pro . "")
    (per . "")
    (con . "")
    (ignored-abbreviation . "") ;; Move it to system (represented by !<\w> regexp)
