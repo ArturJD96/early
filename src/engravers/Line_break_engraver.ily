@@ -13,13 +13,7 @@
 % NOTE: requires 'barify' to work with music.
 
 #(define (grob-width grob)
-
-<<<<<<< HEAD
-;; Not reading from Score context... get it better from EarlyVoice!  (let ((extent (ly:grob-property grob 'X-extent))
-=======
-;; Not reading from Score context... get it better from EarlyVoice!
   (let ((extent (ly:grob-property grob 'X-extent))
->>>>>>> 928c32366c56442fb008fb38152ed5c4c91de7f9
         (extra (ly:grob-property grob 'extra-spacing-width))
         (padding (ly:grob-property grob 'padding)))
 
@@ -124,7 +118,6 @@
       ;; (i.e. when dot's x-extent/grob width is smaller than it's host's note column extent.)
       ;; 2025: dots do not influence space unless in EarlyVoice.
       (step grob))
-<<<<<<< HEAD
      ((dot-column-interface engraver grob source)
       ;(display source)
       ;(display (ly:grob-property grob 'padding))
@@ -132,26 +125,17 @@
       (step grob))
      ((rhythmic-grob-interface engraver grob source)
       (step grob))
-     ;((note-column-interface engraver grob source)
-=======
-     ;((rhythmic-grob-interface engraver grob source)
-     ; (display grob))
      ((mensural-ligature-interface engraver grob source)
       '()) ;; To do & research more. Is it already processed (or neglected) in note-column-interface?
      ((note-column-interface engraver grob source)
->>>>>>> 928c32366c56442fb008fb38152ed5c4c91de7f9
       ;; Well, changing e.g. NoteHeads extra-width-offset
       ;; does not affect note column width.
       ;; Should I just get the bigger available value
       ;; (i.e. notehead vs stem vs column vs dot???)?
-<<<<<<< HEAD
-      ;(step grob))
-=======
       (when breaks (set! breaks #f))
       (when (not (null? (ly:grob-property grob 'stencil)))
        ;; This check is needed for the following situations:
        ;; – a ligature. It does not have a stencil!
        (step grob)))
->>>>>>> 928c32366c56442fb008fb38152ed5c4c91de7f9
     )
 )))
