@@ -283,7 +283,7 @@ Args:
    ;; Ligatures
    (er-final . "ꝯ") ;; ???
    (us-final . "ꝯ")
-   (con . "ɔ")
+   (con . "ↄ")
    (er-final . "'")
    (quem . "ꝗ̄")
    (rum-final . "ꝝ")
